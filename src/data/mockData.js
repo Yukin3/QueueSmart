@@ -45,3 +45,18 @@ export const initialServices = [
     ],
   },
 ];
+
+// Stands in for the signed-in user until authentication is built. This id
+// matches an existing queue entry so the queue screens have live data to show.
+export const currentUser = {
+  id: 'usr-101',
+  name: 'Avery Johnson',
+  email: 'avery.johnson@student.edu',
+};
+
+export const initialHistory = [
+  { id: 'hist-1', serviceName: 'Financial Services', date: 'Jul 8, 2026', outcome: 'Served' },
+  { id: 'hist-2', serviceName: 'Technical Support', date: 'Jul 5, 2026', outcome: 'Served' },
+  { id: 'hist-3', serviceName: 'Academic Advising', date: 'Jul 1, 2026', outcome: 'Left' },
+  { id: 'hist-4', serviceName: 'General Help Desk', date: 'Jun 28, 2026', outcome: 'No-show' },
+];

@@ -20,6 +20,8 @@ export function Icon({ name, size = 20 }) {
     check: <><path d="m5 12 4 4L19 6"/></>,
     close: <><path d="M18 6 6 18"/><path d="m6 6 12 12"/></>,
     logout: <><path d="M10 17l5-5-5-5"/><path d="M15 12H3"/><path d="M21 19V5a2 2 0 0 0-2-2h-6"/></>,
+    history: <><path d="M3 3v5h5"/><path d="M3.05 13A9 9 0 1 0 6 5.3L3 8"/><path d="M12 7v5l4 2"/></>,
+    alert: <><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></>,
   };
   return <svg {...common}>{paths[name]}</svg>;
 }

@@ -2,9 +2,16 @@ import React from 'react';
 import Layout from './components/Layout';
 import Modal from './components/Modal';
 import { Icon } from './components/Icons';
-import { initialServices } from './data/mockData';
+import { PageHeader, StatusBadge, PriorityBadge, EmptyState, formatWait, nowTime, formatDate } from './components/Shared';
+import { initialServices, initialHistory, currentUser } from './data/mockData';
+import UserDashboard from './user/UserDashboard';
+import JoinQueue from './user/JoinQueue';
+import QueueStatus from './user/QueueStatus';
+import History from './user/History';
+import { getUserNotifications } from './user/userQueue';
 
 const STORAGE_KEY = 'queuesmart-admin-services-v1';
+const HISTORY_KEY = 'queuesmart-user-history-v1';
 
 function loadServices() {
   try {
@@ -15,34 +22,13 @@ function loadServices() {
   }
 }
 
-function formatWait(service) {
-  if (!service.queue.length) return 'No wait';
-  return `~${service.queue.length * service.expectedDuration} min`;
-}
-
-function PageHeader({ eyebrow, title, description, action }) {
-  return (
-    <div className="page-header">
-      <div>
-        <div className="eyebrow">{eyebrow}</div>
-        <h1>{title}</h1>
-        <p>{description}</p>
-      </div>
-      {action}
-    </div>
-  );
-}
-
-function StatusBadge({ open }) {
-  return <span className={`status-badge ${open ? 'open' : 'closed'}`}><span className="status-dot" />{open ? 'Open' : 'Closed'}</span>;
-}
-
-function PriorityBadge({ level }) {
-  return <span className={`priority-badge ${level}`}>{level}</span>;
-}
-
-function EmptyState({ title, message }) {
-  return <div className="empty-state"><div className="empty-icon"><Icon name="queue" size={28} /></div><strong>{title}</strong><p>{message}</p></div>;
+function loadHistory() {
+  try {
+    const saved = localStorage.getItem(HISTORY_KEY);
+    return saved ? JSON.parse(saved) : initialHistory;
+  } catch {
+    return initialHistory;
+  }
 }
 
 function Dashboard({ services, setServices, goTo }) {
@@ -270,24 +256,67 @@ function QueueManagement({ services, setServices, initialServiceId }) {
   );
 }
 
+const NAV_ITEMS = [
+  { section: 'My Account' },
+  { id: 'user-dashboard', label: 'Dashboard', icon: 'dashboard' },
+  { id: 'join', label: 'Join Queue', icon: 'plus' },
+  { id: 'status', label: 'Queue Status', icon: 'clock' },
+  { id: 'history', label: 'History', icon: 'history' },
+  { section: 'Administrator' },
+  { id: 'dashboard', label: 'Dashboard', icon: 'dashboard' },
+  { id: 'services', label: 'Service Management', icon: 'services' },
+  { id: 'queues', label: 'Queue Management', icon: 'queue' },
+];
+const USER_PAGES = ['user-dashboard', 'join', 'status', 'history'];
+
 export default function App() {
-  const [page, setPage] = React.useState('dashboard');
+  const [page, setPage] = React.useState('user-dashboard');
   const [selectedServiceId, setSelectedServiceId] = React.useState(null);
   const [services, setServices] = React.useState(loadServices);
+  const [history, setHistory] = React.useState(loadHistory);
 
   React.useEffect(() => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(services));
   }, [services]);
+
+  React.useEffect(() => {
+    localStorage.setItem(HISTORY_KEY, JSON.stringify(history));
+  }, [history]);
 
   function goTo(nextPage, serviceId = null) {
     setSelectedServiceId(serviceId);
     setPage(nextPage);
   }
 
-  const notifications = services.filter((service) => service.isOpen && service.queue.length >= 3).length;
+  function joinQueue(serviceId) {
+    setServices((current) => current.map((service) => {
+      if (service.id !== serviceId || service.queue.some((user) => user.id === currentUser.id)) return service;
+      return { ...service, queue: [...service.queue, { id: currentUser.id, name: currentUser.name, joinedAt: nowTime(), priority: 'medium', status: 'waiting' }] };
+    }));
+  }
+
+  function leaveQueue(serviceId) {
+    const service = services.find((item) => item.id === serviceId);
+    setServices((current) => current.map((item) => item.id === serviceId ? { ...item, queue: item.queue.filter((user) => user.id !== currentUser.id) } : item));
+    if (service) {
+      setHistory((current) => [{ id: `hist-${crypto.randomUUID()}`, serviceName: service.name, date: formatDate(), outcome: 'Left' }, ...current]);
+    }
+  }
+
+  const isUserPage = USER_PAGES.includes(page);
+  const notifications = isUserPage
+    ? getUserNotifications(services, currentUser.id).length
+    : services.filter((service) => service.isOpen && service.queue.length >= 3).length;
+  const account = isUserPage
+    ? { name: currentUser.name, email: currentUser.email }
+    : { name: 'Admin User', email: 'admin@queuesmart.app' };
 
   return (
-    <Layout page={page} onPageChange={goTo} notifications={notifications}>
+    <Layout navItems={NAV_ITEMS} page={page} onPageChange={goTo} notifications={notifications} account={account}>
+      {page === 'user-dashboard' && <UserDashboard services={services} currentUser={currentUser} onJoin={joinQueue} onLeave={leaveQueue} goTo={goTo} />}
+      {page === 'join' && <JoinQueue services={services} currentUser={currentUser} onJoin={joinQueue} onLeave={leaveQueue} />}
+      {page === 'status' && <QueueStatus services={services} currentUser={currentUser} onLeave={leaveQueue} />}
+      {page === 'history' && <History history={history} />}
       {page === 'dashboard' && <Dashboard services={services} setServices={setServices} goTo={goTo} />}
       {page === 'services' && <ServiceManagement services={services} setServices={setServices} />}
       {page === 'queues' && <QueueManagement services={services} setServices={setServices} initialServiceId={selectedServiceId} />}
