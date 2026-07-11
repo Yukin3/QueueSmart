@@ -1,10 +1,13 @@
 import React from 'react';
+import { useState } from "react";
+import AuthPage from "./components/AuthPage";
 import Layout from './components/Layout';
 import Modal from './components/Modal';
 import { Icon } from './components/Icons';
 import { initialServices } from './data/mockData';
 
 const STORAGE_KEY = 'queuesmart-admin-services-v1';
+
 
 function loadServices() {
   try {
@@ -274,6 +277,9 @@ export default function App() {
   const [page, setPage] = React.useState('dashboard');
   const [selectedServiceId, setSelectedServiceId] = React.useState(null);
   const [services, setServices] = React.useState(loadServices);
+  const [loggedIn, setLoggedIn] = useState(false);
+
+
 
   React.useEffect(() => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(services));
@@ -286,6 +292,9 @@ export default function App() {
 
   const notifications = services.filter((service) => service.isOpen && service.queue.length >= 3).length;
 
+  if (!loggedIn) {
+  return <AuthPage onLogin={() => setLoggedIn(true)} />;
+}
   return (
     <Layout page={page} onPageChange={goTo} notifications={notifications}>
       {page === 'dashboard' && <Dashboard services={services} setServices={setServices} goTo={goTo} />}
