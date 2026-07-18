@@ -1,6 +1,8 @@
 const express = require("express");
 const cors = require("cors");
 const path = require("path");
+const services = require("./data/services");
+
 
 
 
@@ -28,7 +30,9 @@ app.get("/api/health", (req, res) => {
 
 
 //routes
-
+app.get("/api/services", (req, res) => {
+  res.json(services);
+});
 
 app.listen(PORT, () => {
   console.log(`QueueSmart backend is running at http://localhost:${PORT}`);
