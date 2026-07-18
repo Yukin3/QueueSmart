@@ -1,13 +1,8 @@
 import React from 'react';
 import { Icon } from './Icons';
+import { initials } from './Shared';
 
-const navItems = [
-  { id: 'dashboard', label: 'Dashboard', icon: 'dashboard' },
-  { id: 'services', label: 'Service Management', icon: 'services' },
-  { id: 'queues', label: 'Queue Management', icon: 'queue' },
-];
-
-export default function Layout({ page, onPageChange, notifications, children }) {
+export default function Layout({ navItems, page, onPageChange, notifications, account, children }) {
   const [sidebarOpen, setSidebarOpen] = React.useState(false);
 
   function navigate(id) {
@@ -22,26 +17,30 @@ export default function Layout({ page, onPageChange, notifications, children }) 
           <div className="brand-mark">QS</div>
           <div>
             <div className="brand-name">QueueSmart</div>
-            <div className="brand-subtitle">Administrator</div>
+            <div className="brand-subtitle">Portal</div>
           </div>
         </div>
-        <nav className="sidebar-nav" aria-label="Administrator navigation">
-          {navItems.map((item) => (
-            <button
-              key={item.id}
-              className={`nav-item ${page === item.id ? 'active' : ''}`}
-              onClick={() => navigate(item.id)}
-            >
-              <Icon name={item.icon} size={19} />
-              <span>{item.label}</span>
-            </button>
-          ))}
+        <nav className="sidebar-nav" aria-label="Main navigation">
+          {navItems.map((item) =>
+            item.section ? (
+              <div className="nav-section" key={`section-${item.section}`}>{item.section}</div>
+            ) : (
+              <button
+                key={item.id}
+                className={`nav-item ${page === item.id ? 'active' : ''}`}
+                onClick={() => navigate(item.id)}
+              >
+                <Icon name={item.icon} size={19} />
+                <span>{item.label}</span>
+              </button>
+            ),
+          )}
         </nav>
         <div className="sidebar-footer">
-          <div className="admin-avatar">MG</div>
+          <div className="admin-avatar">{initials(account.name)}</div>
           <div className="admin-details">
-            <strong>Admin User</strong>
-            <span>admin@queuesmart.app</span>
+            <strong>{account.name}</strong>
+            <span>{account.email}</span>
           </div>
           <button className="icon-button ghost" title="Sign out" aria-label="Sign out">
             <Icon name="logout" size={18} />
