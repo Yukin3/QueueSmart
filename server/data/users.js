@@ -8,7 +8,7 @@ const users = [
     organizationId: "org-uh"
   },
 {
-    id: "admin-mmokut",
+    id: "admin-001",
     name: "Admin Mmokut",
     email: "mmokut@qs.com",
     password: "queuesmart",
@@ -24,7 +24,7 @@ const users = [
     organizationId: "org-uh"
   },
 {
-    id: "admin-002",
+    id: "admin-003",
     name: "Admin Martin",
     email: "martin@qs.com",
     password: "password",
@@ -32,7 +32,7 @@ const users = [
     organizationId: "org-uh"
   },
 {
-    id: "admin-002",
+    id: "admin-004",
     name: "Admin Nhien",
     email: "nhien@qs.com",
     password: "password",

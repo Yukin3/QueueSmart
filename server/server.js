@@ -1,8 +1,10 @@
 const express = require("express");
 const cors = require("cors");
 const path = require("path");
-const services = require("./data/services");
 
+//mock data imports
+const services = require("./data/services");
+const users = require("./data/users");
 
 
 
@@ -33,6 +35,40 @@ app.get("/api/health", (req, res) => {
 app.get("/api/services", (req, res) => {
   res.json(services);
 });
+
+
+
+
+app.post("/api/auth/login", (req, res) => {
+  const { email, password } = req.body;
+
+  if (!email || !password) {
+    return res.status(400).json({
+      error: "Email and password are required!",
+    });
+  }
+
+  const user = users.find(
+    (item) =>
+      item.email.toLowerCase() === email.toLowerCase() &&
+      item.password === password
+  );
+
+  if (!user) {
+    return res.status(401).json({
+      error: "Invalid email or password!",
+    });
+  }
+
+  const { password: _password, ...safeUser } = user;
+
+  res.json({
+    message: "Login success!",
+    user: safeUser,
+  });
+});
+
+
 
 app.listen(PORT, () => {
   console.log(`QueueSmart backend is running at http://localhost:${PORT}`);
