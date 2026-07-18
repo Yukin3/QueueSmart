@@ -259,17 +259,21 @@ function QueueManagement({ services, setServices, initialServiceId }) {
   );
 }
 
-const NAV_ITEMS = [
+const USER_NAV_ITEMS = [
   { section: 'My Account' },
   { id: 'user-dashboard', label: 'Dashboard', icon: 'dashboard' },
   { id: 'join', label: 'Join Queue', icon: 'plus' },
   { id: 'status', label: 'Queue Status', icon: 'clock' },
   { id: 'history', label: 'History', icon: 'history' },
+];
+
+const ADMIN_NAV_ITEMS = [
   { section: 'Administrator' },
   { id: 'dashboard', label: 'Dashboard', icon: 'dashboard' },
   { id: 'services', label: 'Service Management', icon: 'services' },
   { id: 'queues', label: 'Queue Management', icon: 'queue' },
 ];
+
 const USER_PAGES = ['user-dashboard', 'join', 'status', 'history'];
 
 export default function App() {
@@ -277,6 +281,7 @@ export default function App() {
   const [selectedServiceId, setSelectedServiceId] = React.useState(null);
   const [services, setServices] = React.useState(loadServices);
   const [loggedIn, setLoggedIn] = React.useState(false);
+  const [role, setRole] = React.useState(null);
   const [history, setHistory] = React.useState(loadHistory);
 
   React.useEffect(() => {
@@ -315,11 +320,32 @@ export default function App() {
     ? { name: currentUser.name, email: currentUser.email }
     : { name: 'Admin User', email: 'admin@queuesmart.app' };
 
+
+  
+  function handleLogin(selectedRole) {
+    setRole(selectedRole);
+    setLoggedIn(true);
+
+    if (selectedRole === 'admin') {
+      setPage('dashboard');
+    } else {
+      setPage('user-dashboard');
+    }
+  }
+
+
+
   if (!loggedIn) {
-  return <AuthPage onLogin={() => setLoggedIn(true)} />;
-}
+    return <AuthPage onLogin={handleLogin} />;
+  }
+
+
+  const navItems = role === 'admin' ? ADMIN_NAV_ITEMS : USER_NAV_ITEMS;
+
+  
+
   return (
-    <Layout navItems={NAV_ITEMS} page={page} onPageChange={goTo} notifications={notifications} account={account}>
+    <Layout navItems={navItems} page={page} onPageChange={goTo} notifications={notifications} account={account}>
       {page === 'user-dashboard' && <UserDashboard services={services} currentUser={currentUser} onJoin={joinQueue} onLeave={leaveQueue} goTo={goTo} />}
       {page === 'join' && <JoinQueue services={services} currentUser={currentUser} onJoin={joinQueue} onLeave={leaveQueue} />}
       {page === 'status' && <QueueStatus services={services} currentUser={currentUser} onLeave={leaveQueue} />}
