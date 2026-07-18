@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>QueueSmart API</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        background: #f4f8fb;
+        color: #102a43;
+        padding: 40px;
+      }
+
+      .container {
+        max-width: 900px;
+        margin: 0 auto;
+        background: white;
+        border: 1px solid #d9e4ea;
+        border-radius: 16px;
+        padding: 32px;
+        box-shadow: 0 12px 30px rgba(15, 52, 62, 0.08);
+      }
+
+      h1 {
+        margin-top: 0;
+        color: #08798d;
+      }
+
+      .route {
+        border: 1px solid #d9e4ea;
+        border-radius: 10px;
+        padding: 16px;
+        margin: 14px 0;
+        background: #f9fcfd;
+      }
+
+      .method {
+        font-weight: bold;
+        color: white;
+        background: #08798d;
+        padding: 4px 8px;
+        border-radius: 6px;
+        margin-right: 8px;
+      }
+
+      code {
+        background: #e8f3f6;
+        padding: 3px 6px;
+        border-radius: 5px;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="container">
+      <h1>QueueSmart API Documentation</h1>
+      <p>The backend is running !</p>
+      <p> Read below for API endpoints and usages.</p>
+    
+    <h3>Implemented!!</h3>
+       <p>These routes are ready for usage.</p>
+
+
+    <h2>System</h2> 
+
+      <div class="route">
+        <p><span class="method">GET</span><code>/api/health</code></p>
+        <p>Checks whether the QueueSmart server is running. Returns "ok" if yes.</p>
+      </div>
+
+
+
+    <h3>*Planned*</h3>
+        <p>These routes are not yet working, and will be Implemented.</p>
+      
+        
+    <h2>Authentication</h2>
+
+      <div class="route">
+        <p><span class="method">POST</span><code>/api/auth/login</code></p>
+        <p>Authenticates a administrator or user.</p>
+      </div>
+
+
+      <div class="route">
+        <p><span class="method">POST</span><code>/api/auth/register</code></p>
+        <p>Registers a new administrator or user.</p>
+      </div>
+
+
+      <div class="route">
+        <p><span class="method">GET</span><code>/api/auth/me</code></p>
+        <p>Returns the currently signed in admin/organiation or user. Use for session state tracking.</p>
+      </div>
+
+    <h2>Services</h2>
+
+      <div class="route">
+        <p><span class="method">GET</span><code>/api/services</code></p>
+        <p>Returns a list of services for the current administrator or organization. Use params ...... for filtering response.</p>
+      </div>
+
+      <div class="route">
+        <p><span class="method">GET</span><code>/api/services/:serviceId</code></p>
+        <p>Returns the detail of one service.</p>
+      </div>
+
+
+      <div class="route">
+        <p><span class="method">POST</span><code>/api/services</code></p>
+        <p>Creates a new service for an administrator or organization.</p>
+      </div>
+
+      <div class="route">
+        <p><span class="method">PUT</span><code>/api/services/:serviceId</code></p>
+        <p>Upddates the details (name, description, duration, etc) of a service.</p>
+      </div>
+
+      <div class="route">
+        <p><span class="method">PATCH</span><code>/api/services/:serviceId</code></p>
+        <p>Opens or closes the queue to a service.</p>
+      </div>
+
+      <div class="route">
+        <p><span class="method">DELETE</span><code>/api/services/:serviceId</code></p>
+        <p>Deletes a service from the administrator/organization.</p>
+      </div>
+
+
+    
+    
+    <h2>Queues</h2>   
+      <div class="route">
+        <p><span class="method">GET</span><code>/api/queues/:serviceId</code></p>
+        <p>Returns the current queue for a selected service.</p>
+      </div>
+
+      <div class="route">
+        <p><span class="method">POST</span><code>/api/queues/:serviceId/join</code></p>
+        <p>Admits user to selected service queue.</p>
+      </div>
+      <div class="route">
+        <p><span class="method">POST</span><code>/api/queues/:serviceId/leave</code></p>
+        <p>Ends user's current queue session.</p>
+      </div>
+
+      <div class="route">
+        <p><span class="method">POST</span><code>/api/queues/:serviceId/serve-next</code></p>
+        <p>Allows administrator to serve the next user in the queue.</p>
+      </div>
+      <div class="route">
+        <p><span class="method">PATCH</span><code>/api/queues/:serviceId/reorder</code></p>
+        <p>Allows the administrator to modify the order of upcoming users in service's queue.</p>
+      </div>
+
+      <div class="route">
+        <p><span class="method">DELETE</span><code>/api/queues/:serviceId/users/:userId</code></p>
+        <p>Removees a user from a the queue of the selected service.</p>
+      </div>
+
+
+
+    <h2>Wait-Time Estimation</h2>  
+      <div class="route">
+        <p><span class="method">GET</span><code>/api/queues/:serviceId/wait-time</code></p>
+        <p>Returns the estimated wait-time for a service.</p>
+      </div>
+
+      <div class="route">
+        <p><span class="method">GET</span><code>/api/users/:userId/queues/current</code></p>
+        <p>Returns the user's current positon in the queue, their estimated wait time, and their status (joined/unjoined?). Status can be used for triggering reminders to join queues or prepare for service.</p>
+      </div>
+
+
+
+    <h2>Notifications</h2>  
+      <div class="route">
+        <p><span class="method">GET</span><code>/api/users/:userId/notifications</code></p>
+        <p>Returns user/admin notifications (queue updates, reminders, new appmt etc).</p>
+      </div>
+
+
+      <div class="route">
+        <p><span class="method">POST</span><code>//api/users/:userId/notifications</code></p>
+        <p>Creates a new notification.</p>
+      </div>
+
+      <div class="route">
+        <p><span class="method">PATCH</span><code>/api/notifications/:notificationId/read</code></p>
+        <p>Marks a notification as read.</p>
+      </div>
+
+
+
+    <h2>History</h2>  
+
+      <div class="route">
+        <p><span class="method">GET</span><code>/api/history</code></p>
+        <p>Returns a user's or administrator's queue session history.</p>
+      </div>
+
+     <div class="route">
+        <p><span class="method">POST</span><code>/api/history</code></p>
+        <p>Add's an event and status (completed, left, served) to a user's or administrator's queue session history.</p>
+      </div>
+
+    <h2>Admin Statistics/Usages</h2>  
+     <div class="route">
+        <p><span class="method">GET</span><code>/api/admin/stats</code></p>
+        <p>Returns all the statistcs of all services and administrator/organization usage. Use params ...... for filtering response.</p>
+      </div>
+
+      <div class="route">
+        <p><span class="method">GET</span><code>/api/admin/services/summary</code></p>
+        <p>Returns a summary of details of a service proivided.</p>
+      </div>
+
+
+    </div>
+  </body>
+</html>
