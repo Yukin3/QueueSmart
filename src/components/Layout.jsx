@@ -2,7 +2,7 @@ import React from 'react';
 import { Icon } from './Icons';
 import { initials } from './Shared';
 
-export default function Layout({ navItems, page, onPageChange, notifications, account, children }) {
+export default function Layout({ navItems, page, onPageChange, notifications, account, onLogout, children }) {
   const [sidebarOpen, setSidebarOpen] = React.useState(false);
 
   function navigate(id) {
@@ -42,7 +42,7 @@ export default function Layout({ navItems, page, onPageChange, notifications, ac
             <strong>{account.name}</strong>
             <span>{account.email}</span>
           </div>
-          <button className="icon-button ghost" title="Sign out" aria-label="Sign out">
+          <button className="icon-button ghost" title="Sign out" aria-label="Sign out" onClick={onLogout}>
             <Icon name="logout" size={18} />
           </button>
         </div>

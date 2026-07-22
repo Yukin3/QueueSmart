@@ -280,9 +280,13 @@ export default function App() {
   const [page, setPage] = React.useState('user-dashboard');
   const [selectedServiceId, setSelectedServiceId] = React.useState(null);
   const [services, setServices] = React.useState(loadServices);
-  const [loggedIn, setLoggedIn] = React.useState(false);
-  const [role, setRole] = React.useState(null);
   const [history, setHistory] = React.useState(loadHistory);
+
+  //user states
+  const [loggedIn, setLoggedIn] = React.useState(false);  //TODO: store user info in local storage to fix refresh loguts
+  const [currentUserAccount, setCurrentUserAccount] = React.useState(null);
+
+
 
   React.useEffect(() => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(services));
@@ -296,6 +300,31 @@ export default function App() {
     setSelectedServiceId(serviceId);
     setPage(nextPage);
   }
+
+
+
+  //TODO: fix login handler, receive full user object
+  //Login handler
+  function handleLogin(user) {
+    setCurrentUserAccount(user);
+    setLoggedIn(true);
+
+    if (user === 'admin') {
+      setPage('dashboard');
+    } 
+    else {
+      setPage('user-dashboard');
+    }
+  }
+
+  function handleLogout(){
+    setCurrentUserAccount(null); //remove active user state
+    setLoggedIn(false)
+    setPage("user-dashboard")
+  }
+
+
+
 
   function joinQueue(serviceId) {
     setServices((current) => current.map((service) => {
@@ -311,48 +340,52 @@ export default function App() {
       setHistory((current) => [{ id: `hist-${crypto.randomUUID()}`, serviceName: service.name, date: formatDate(), outcome: 'Left' }, ...current]);
     }
   }
-
-  const isUserPage = USER_PAGES.includes(page);
-  const notifications = isUserPage
-    ? getUserNotifications(services, currentUser.id).length
-    : services.filter((service) => service.isOpen && service.queue.length >= 3).length;
-  const account = isUserPage
-    ? { name: currentUser.name, email: currentUser.email }
-    : { name: 'Admin User', email: 'admin@queuesmart.app' };
-
-
-  
-  function handleLogin(selectedRole) {
-    setRole(selectedRole);
-    setLoggedIn(true);
-
-    if (selectedRole === 'admin') {
-      setPage('dashboard');
-    } else {
-      setPage('user-dashboard');
-    }
-  }
-
-
-
+ 
   if (!loggedIn) {
     return <AuthPage onLogin={handleLogin} />;
   }
 
 
-  const navItems = role === 'admin' ? ADMIN_NAV_ITEMS : USER_NAV_ITEMS;
+
+  //Protect admin/user screens
+  const isAdmin = currentUserAccount?.role === "admin";
+  const isUser = currentUserAccount?.role === "user";
+
+  
+  //Sidebar / Nav bar
+  const navItems = isAdmin ? ADMIN_NAV_ITEMS : USER_NAV_ITEMS;   //TODO: use user object in nav bar
+  
+
+
+  //User personalization
+  const account = currentUserAccount
+    ? { name: currentUserAccount.name, email: currentUserAccount.email }    //TODO: req. name/email for regist. users
+    : { name: "Guest", email: "" };
+
+
+
+
+  const isUserPage = USER_PAGES.includes(page);
+  const notifications = isUserPage
+    ? getUserNotifications(services, currentUser.id).length
+    : services.filter((service) => service.isOpen && service.queue.length >= 3).length;
+ 
 
   
 
+ 
+
+
   return (
-    <Layout navItems={navItems} page={page} onPageChange={goTo} notifications={notifications} account={account}>
-      {page === 'user-dashboard' && <UserDashboard services={services} currentUser={currentUser} onJoin={joinQueue} onLeave={leaveQueue} goTo={goTo} />}
-      {page === 'join' && <JoinQueue services={services} currentUser={currentUser} onJoin={joinQueue} onLeave={leaveQueue} />}
-      {page === 'status' && <QueueStatus services={services} currentUser={currentUser} onLeave={leaveQueue} />}
-      {page === 'history' && <History history={history} />}
-      {page === 'dashboard' && <Dashboard services={services} setServices={setServices} goTo={goTo} />}
-      {page === 'services' && <ServiceManagement services={services} setServices={setServices} />}
-      {page === 'queues' && <QueueManagement services={services} setServices={setServices} initialServiceId={selectedServiceId} />}
+    <Layout navItems={navItems} page={page} onPageChange={goTo} notifications={notifications} account={account} onLogout={handleLogout}>
+      {isUser && page === 'user-dashboard' && <UserDashboard services={services} currentUser={currentUser} onJoin={joinQueue} onLeave={leaveQueue} goTo={goTo} />}
+      {isUser && page === 'join' && <JoinQueue services={services} currentUser={currentUser} onJoin={joinQueue} onLeave={leaveQueue} />}
+      {isUser && page === 'status' && <QueueStatus services={services} currentUser={currentUser} onLeave={leaveQueue} />}
+      {isUser && page === 'history' && <History history={history} />}
+      {isAdmin && page === 'dashboard' && <Dashboard services={services} setServices={setServices} goTo={goTo} />}
+      {isAdmin && page === 'services' && <ServiceManagement services={services} setServices={setServices} />}
+      {isAdmin && page === 'queues' && <QueueManagement services={services} setServices={setServices} initialServiceId={selectedServiceId} />}
+      {isAdmin && page === 'history' && <History history={history} />}
     </Layout>
   );
 }

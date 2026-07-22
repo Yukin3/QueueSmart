@@ -40,41 +40,58 @@ export default function AuthPage({ onLogin }) {
   }
 
 
-  //normal handler
-//   function handleSubmit(e) {
-//     e.preventDefault();
-//     if (!validate()) return;
-//     onLogin?.(form.role);
-//   }
 
-
-//test handler 
-function handleSubmit(e) {
+//TODO: use login API 
+async function handleSubmit(e) {
   e.preventDefault();
   if (!validate()) return;
 
   const normalizedEmail = form.email.trim().toLowerCase();
 
   if (mode === "login") {
-    if (normalizedEmail === "admin@qs.com" && form.password === "password") {
-      onLogin?.("admin");
+    try{
+      const response = await fetch("http://localhost:5000/api/auth/login", {  //call login API
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        }, 
+        body: JSON.stringify({  //send input
+          email: form.email,
+          password: form.password,
+        }),
+    }); 
+
+    const data = await response.json();
+
+    if (!response.ok){
+      setErrors({
+        login: data.error || "Invalid login credentials! Please try again."
+      });
       return;
     }
 
-    if (normalizedEmail === "user@qs.com" && form.password === "password") {
-      onLogin?.("user");
-      return;
-    }
 
+    onLogin?.(data.user);
+    return;
+  } catch (error){
     setErrors({
-      login: "Invalid login. Please try again.",
+      login: "Failed to connect to backend server."
     });
     return;
   }
+ }
+
 
   // Registration mock: use selected role
-  onLogin?.(form.role);
+  onLogin?.({
+    id: `mock-${Date.now()}`,
+    name: form.email.split("@")[0],
+    email: form.email,
+    role: form.role,
+    organizationId: "org-mock",
+  });
 }
+
 
   return (
     <div className="auth-screen">
