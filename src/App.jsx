@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { use } from 'react';
 import { useState } from "react";
 import AuthPage from "./components/AuthPage";
 import Layout from './components/Layout';
@@ -283,8 +283,16 @@ export default function App() {
   const [history, setHistory] = React.useState(loadHistory);
 
   //user states
-  const [loggedIn, setLoggedIn] = React.useState(false);  //TODO: store user info in local storage to fix refresh loguts
-  const [currentUserAccount, setCurrentUserAccount] = React.useState(null);
+  const [loggedIn, setLoggedIn] = React.useState(() => {
+    return localStorage.getItem("queuesmart-user") !== null;  
+  }); 
+
+
+  //TODO: fix user state in local storage for refresh
+  const [currentUserAccount, setCurrentUserAccount] = React.useState(() => {
+    const savedUser = localStorage.getItem("queuesmart-user"); 
+    return savedUser ? JSON.parse(savedUser) : null;
+});
 
 
 
@@ -303,12 +311,15 @@ export default function App() {
 
 
 
-  //TODO: fix login handler, receive full user object
+
   //Login handler
   function handleLogin(user) {
-    setCurrentUserAccount(user);
+    setCurrentUserAccount(user); //set active user state
+    localStorage.setItem("queuesmart-user", JSON.stringify(user));  //store user in local storage
     setLoggedIn(true);
 
+
+    //assign user roles
     if (user === 'admin') {
       setPage('dashboard');
     } 
@@ -317,11 +328,15 @@ export default function App() {
     }
   }
 
+
+
   function handleLogout(){
+    localStorage.removeItem("queuesmart-user");
     setCurrentUserAccount(null); //remove active user state
-    setLoggedIn(false)
-    setPage("user-dashboard")
+    setLoggedIn(false);
+    setPage("user-dashboard");
   }
+
 
 
 
