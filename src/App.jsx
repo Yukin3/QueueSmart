@@ -320,7 +320,7 @@ export default function App() {
 
 
     //assign user roles
-    if (user === 'admin') {
+    if (user.role === 'admin') {
       setPage('dashboard');
     } 
     else {
