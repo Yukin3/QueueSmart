@@ -16,6 +16,11 @@ const PORT = 5000; //port server runs on
 app.use(cors()); //allows front end/other origin requests
 app.use(express.json()); //convert json responses to javascript
 
+app.use((req, res, next) => {
+  console.log(`${req.method} ${req.url}`); //log api usage
+  next();
+});
+
 
 //routes
 
