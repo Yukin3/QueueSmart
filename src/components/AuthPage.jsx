@@ -1,4 +1,8 @@
 import React, { useState } from "react";
+import { loginUser } from "../api/authApi";
+
+
+
 
 export default function AuthPage({ onLogin }) {
   const [mode, setMode] = useState("login");
@@ -50,39 +54,22 @@ async function handleSubmit(e) {
 
   if (mode === "login") {
     try{
-      const response = await fetch("http://localhost:5000/api/auth/login", {  //call login API
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        }, 
-        body: JSON.stringify({  //send input
-          email: form.email,
-          password: form.password,
-        }),
-    }); 
+      const data = await loginUser(normalizedEmail, form.password);
+      onLogin?.(data.user);
 
-    const data = await response.json();
-
-    if (!response.ok){
-      setErrors({
-        login: data.error || "Invalid login credentials! Please try again."
-      });
       return;
-    }
-
-
-    onLogin?.(data.user);
-    return;
   } catch (error){
+
     setErrors({
-      login: "Failed to connect to backend server."
+      login: error.error || "Invalid login credentials! Please try again."
     });
+
     return;
   }
  }
 
 
-  // Registration mock: use selected role
+  //mock registration
   onLogin?.({
     id: `mock-${Date.now()}`,
     name: form.email.split("@")[0],
