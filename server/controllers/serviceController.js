@@ -10,6 +10,7 @@ function getServices(req, res) {
 //create and validate new service object
 function createService(req, res) {
     const { name, description, expectedDuration, priority, adminId, organizationId } = req.body; //extract fields from req body
+    const normalPriority = priority?.toLowerCase().trim();
     const errors = {}; //init validation error list
 
 
@@ -25,7 +26,7 @@ function createService(req, res) {
     if (!description || !description.trim()) {
         errors.description = "Description is required.";
     } else if (description.trim().length > 1000) {
-        errors.description = "Service description cannot exceede 1000 characters.";
+        errors.description = "Service description cannot exceed 1000 characters.";
     }
 
 
@@ -44,7 +45,7 @@ function createService(req, res) {
 
 
     //confirm priority among options
-    if (!["low", "medium", "high"].includes(priority)) {
+    if (!["low", "medium", "high"].includes(normalPriority)) {
         errors.priority = "Priority must be low, medium, or high.";
     }
 
@@ -69,7 +70,7 @@ function createService(req, res) {
         name: name.trim(),
         description: description.trim(),
         expectedDuration: duration,
-        priority,
+        priority: normalPriority,
         isOpen: false,
     };
 
