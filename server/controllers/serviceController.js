@@ -10,7 +10,7 @@ function getServices(req, res) {
 
 
 //*filters
-    //by priority
+    //by priority 
     if (priority) {
     const normalPriority = priority.toLowerCase().trim();
 
@@ -152,12 +152,125 @@ function createService(req, res) {
 
 
 
-//TODO: implement PATCH endpoint
+function updateService(req, res) {
+    const { serviceId } = req.params; //get service id from req params
+    const { name, description, expectedDuration, priority, isOpen } = req.body;  //get update fields from req body
+    const service = services.find((item) => item.id === serviceId);
+
+
+
+    if (!service) {
+        return res.status(404).json({error: "Service not found."}); //handle invalid service selection
+    }
+
+
+
+    const errors = {};
+
+
+    //validate name if included in update req
+    if (name !== undefined) {
+        if (!name || !name.trim()) {
+            errors.name = "Name cannot be empty.";
+        } else if (name.trim().length > 100) {
+            errors.name = "Service name cannot exceed 100 characters.";
+        }
+    }
+
+
+
+    //validate description if inclduded in update req
+    if (description !== undefined) {
+        if (!description || !description.trim()) {
+            errors.description = "Description cannot be empty.";
+        } else if (description.trim().length > 1000) {
+            errors.description = "Service description cannot exceed 1000 characters.";
+        }
+    }
+
+
+
+
+    //validate description if inclduded in update req
+    if (expectedDuration !== undefined) {
+        const duration = Number(expectedDuration);
+
+        if (!Number.isInteger(duration) || duration < 1 || duration > 480) {
+            errors.expectedDuration =
+                "Expected duration must be a whole number from 1 to 480.";
+        }
+    }
+
+
+
+
+    let normalizedPriority;
+    //validate priority if inclduded in update req
+    if (priority !== undefined) {
+        normalizedPriority = priority.toLowerCase().trim();
+
+        if (!["low", "medium", "high"].includes(normalizedPriority)) {
+            errors.priority = "Priority must be low, medium, or high.";
+        }
+    }
+
+
+
+    //validate availability if inclduded in update req
+    if (isOpen !== undefined && typeof isOpen !== "boolean") {
+        errors.isOpen = "isOpen must be true or false.";
+    }
+
+
+
+
+    //return validation errors
+    if (Object.keys(errors).length > 0) {
+        return res.status(400).json({
+            error: "Invalid service update data.",
+            details: errors,
+        });
+    }
+
+
+
+    //update the fields in the req
+    if (name !== undefined) {
+        service.name = name.trim();
+    }
+
+    if (description !== undefined) {
+        service.description = description.trim();
+    }
+
+    if (expectedDuration !== undefined) {
+        service.expectedDuration = Number(expectedDuration);
+    }
+
+    if (priority !== undefined) {
+        service.priority = normalizedPriority;
+    }
+
+    if (isOpen !== undefined) {
+        service.isOpen = isOpen;
+    }
+
+
+
+
+    //return updated service body
+    return res.json({
+        message: "Service updated successfully.",
+        service,
+    });
+
+
+}
 
 
 
 
 //export controller functions
 module.exports = {
-  getServices, createService
+  getServices, createService, updateService
 };
