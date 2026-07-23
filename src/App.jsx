@@ -16,6 +16,8 @@ import ServiceManagement from "./admin/ServiceManagement";
 import QueueManagement from "./admin/QueueManagement";
 //constant imports
 import {USER_NAV_ITEMS, ADMIN_NAV_ITEMS, USER_PAGES,} from "./constants/navigation";
+//api imports
+import { getServices } from "./api/servicesApi";
 
 
 
@@ -45,10 +47,19 @@ function loadHistory() {
 
 
 
+function normalizeService(service) {
+  return {
+    ...service,
+    queue: service.queue || [],
+  };
+}
+
+
+
 export default function App() {
   const [page, setPage] = React.useState('user-dashboard');
   const [selectedServiceId, setSelectedServiceId] = React.useState(null);
-  const [services, setServices] = React.useState(loadServices);
+  const [services, setServices] = React.useState([]);
   const [history, setHistory] = React.useState(loadHistory);
 
   //user states
@@ -65,13 +76,42 @@ export default function App() {
 
 
 
-  React.useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(services));
-  }, [services]);
 
   React.useEffect(() => {
     localStorage.setItem(HISTORY_KEY, JSON.stringify(history));
   }, [history]);
+
+
+React.useEffect(() => {
+  async function loadBackendServices() {
+    if (!currentUserAccount) return;
+
+    try {
+      let query = "";''
+
+      if (currentUserAccount.role === "admin") {
+        query = `?adminId=${encodeURIComponent(currentUserAccount.id)}`;
+      } else {
+        query = `?organizationId=${encodeURIComponent(
+          currentUserAccount.organizationId
+        )}&status=open`;
+      }
+
+      console.log("Loading services for:", currentUserAccount);
+      console.log("Service query:", query);
+      const data = await getServices(query);
+      setServices(data.map(normalizeService)); //handle api fetch
+
+    } catch (error) {
+      console.error("Failed to load services from backend:", error); //handle fetch error
+
+    }
+  }
+
+  loadBackendServices();
+}, [currentUserAccount]);
+
+
 
   function goTo(nextPage, serviceId = null) {
     setSelectedServiceId(serviceId);
@@ -103,6 +143,7 @@ export default function App() {
     localStorage.removeItem("queuesmart-user");
     setCurrentUserAccount(null); //remove active user state
     setLoggedIn(false);
+    setServices([]);
     setPage("user-dashboard");
   }
 
@@ -149,7 +190,7 @@ export default function App() {
   const isUserPage = USER_PAGES.includes(page);
   const notifications = isUserPage
     ? getUserNotifications(services, currentUser.id).length
-    : services.filter((service) => service.isOpen && service.queue.length >= 3).length;
+    : services.filter((service) => service.isOpen && service.queue?.length >= 3).length;
  
 
   
@@ -161,7 +202,7 @@ export default function App() {
       {isUser && page === 'status' && <QueueStatus services={services} currentUser={currentUser} onLeave={leaveQueue} />}
       {isUser && page === 'history' && <History history={history} />}
       {isAdmin && page === 'dashboard' && <Dashboard services={services} setServices={setServices} goTo={goTo} />}
-      {isAdmin && page === 'services' && <ServiceManagement services={services} setServices={setServices} />}
+      {isAdmin && page === 'services' && <ServiceManagement services={services} setServices={setServices}  currentUserAccount={currentUserAccount}/>}
       {isAdmin && page === 'queues' && <QueueManagement services={services} setServices={setServices} initialServiceId={selectedServiceId} />}
       {isAdmin && page === 'history' && <History history={history} />}
     </Layout>

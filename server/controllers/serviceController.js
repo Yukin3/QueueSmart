@@ -4,12 +4,24 @@ const services = require("../data/services"); //import mock data, //TODO: replac
 
 //return list + attirbutes of all services
 function getServices(req, res) {
-    const {status, priority, sort} = req.query;
+    const {adminId, organizationId, status, priority, sort} = req.query;
 
     let result = [...services];
 
 
 //*filters
+    //by admin owner
+    if (adminId) {
+        result = result.filter((service) => service.adminId === adminId);  //show services with matching admin
+    }
+
+
+    //by linked org
+    if (organizationId) {
+        result = result.filter((service) => service.organizationId === organizationId); //show services with matching org
+    }
+
+
     //by priority 
     if (priority) {
     const normalPriority = priority.toLowerCase().trim();
