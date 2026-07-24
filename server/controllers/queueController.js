@@ -430,7 +430,7 @@ function reorderQueue(req, res) {
 
 }
 
-
+//get queue entry wait time 
 function getWaitTime(req, res) {
   const { serviceId, userId } = req.params;
 
@@ -474,8 +474,119 @@ function getWaitTime(req, res) {
 }
 
 
+//get service wait time
+function getServiceWaitTime(req, res) {
+  const { serviceId } = req.params;
+
+  const service = services.find((item) => item.id === serviceId);
+
+
+
+  if (!service) {
+    return res.status(404).json({error: "Service not found."});  //handle nonexisting service
+  }
+
+
+
+  const waitingQueue = queueEntries.filter((entry) => entry.serviceId === serviceId && entry.status === "waiting");  //filter waiting queueEntries
+
+
+
+  const sortedQueue = sortQueueEntries(waitingQueue);  //sort waiting entries
+
+
+
+  const estimatedWaitIfJoining = sortedQueue.length * service.expectedDuration;  //calculate estimated wait time
+
+
+  //return service wait time info
+  return res.json({
+    serviceId,
+    serviceName: service.name,
+    peopleWaiting: sortedQueue.length,
+    expectedDuration: service.expectedDuration,
+    estimatedWaitIfJoining,
+    estimatedWaitLabel: `~${estimatedWaitIfJoining} min`,
+  });
+
+
+}
+
+
+//get a users current queues
+function getCurrentUserQueues(req, res) {
+  const { userId } = req.params;
+
+
+
+  const userEntries = queueEntries.filter((entry) => entry.userId === userId && entry.status === "waiting"); //find all user's waiting entries
+
+
+  //create queue info
+  const currentQueues = userEntries.map((entry) => {
+
+    const service = services.find((item) => item.id === entry.serviceId);  //handle nonexisting service
+
+
+    //skip entry if service doesnt exist
+    if (!service) {
+      return null;
+    }
+
+
+
+    const waitingQueue = queueEntries.filter((item) => item.serviceId === entry.serviceId && item.status === "waiting");  //sort waiting entries
+
+
+
+    const sortedQueue = sortQueueEntries(waitingQueue);
+    const positionIndex = sortedQueue.findIndex((item) => item.userId === userId);  //assign numerical positions
+
+
+
+    const estimatedWait = positionIndex * service.expectedDuration;  //calculate estimated wait time
+
+
+    //check almost status
+    const displayStatus = positionIndex === 0 && service.isOpen ? "almost" : "waiting";
+
+
+    
+    //return combined queue Entries info
+    return {
+      serviceId: service.id,
+      serviceName: service.name,
+      serviceDescription: service.description,
+      isOpen: service.isOpen,
+      userId,
+      position: positionIndex + 1,
+      peopleAhead: positionIndex,
+      peopleWaiting: sortedQueue.length,
+      expectedDuration: service.expectedDuration,
+      estimatedWait,
+      estimatedWaitLabel: `~${estimatedWait} min`,
+      status: entry.status,
+      displayStatus,
+      joinedAt: entry.joinedAt,
+      type: entry.type,
+      priority: entry.priority,
+      appointmentTime: entry.appointmentTime,
+    };
+  }).filter(Boolean);
+
+
+
+  //return all users active queues
+  return res.json({
+    userId,
+    queues: currentQueues,
+  });
+
+
+}
+
 
 
 module.exports = {
-  getQueue, joinQueue, leaveQueue, serveNext, removeUserFromQueue, reorderQueue, getWaitTime,
+  getQueue, joinQueue, leaveQueue, serveNext, removeUserFromQueue, reorderQueue, getWaitTime, getServiceWaitTime, getCurrentUserQueues,
 };
