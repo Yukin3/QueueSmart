@@ -7,6 +7,22 @@ const users = [
     role: "user",
     organizationId: "org-uh"
   },
+  {
+    id: "user-002",
+    name: "Test User1",
+    email: "test1@qs.com",
+    password: "password",
+    role: "user",
+    organizationId: "org-uh"
+},
+{
+    id: "user-003",
+    name: "Test User2",
+    email: "test2@qs.com",
+    password: "password",
+    role: "user",
+    organizationId: "org-uh"
+},
 {
     id: "admin-001",
     name: "Admin Mmokut",

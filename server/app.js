@@ -5,7 +5,7 @@ const path = require("path");
 //route imports
 const authRoutes = require("./routes/authRoutes");
 const serviceRoutes = require("./routes/serviceRoutes");
-
+const queueRoutes = require("./routes/queueRoutes");
 
 
 const app = express();
@@ -40,6 +40,7 @@ app.get("/api/health", (req, res) => {
 //*API Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/services", serviceRoutes);
+app.use("/api/queues", queueRoutes);
 
 
 module.exports = app; //export express app
