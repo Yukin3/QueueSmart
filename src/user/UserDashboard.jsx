@@ -6,15 +6,15 @@ import { getUserQueues, getUserNotifications } from './userQueue';
 const TONE_ICON = { success: 'check', info: 'bell', warning: 'alert' };
 
 export default function UserDashboard({ services, currentUser, onJoin, onLeave, goTo }) {
-  const myQueues = getUserQueues(services, currentUser.id);
-  const notifications = getUserNotifications(services, currentUser.id);
+  const myQueues = getUserQueues(services, currentUser?.id);
+  const notifications = getUserNotifications(services, currentUser?.id);
   const openServices = services.filter((service) => service.isOpen);
 
   return (
     <>
       <PageHeader
         eyebrow="My Account"
-        title={`Welcome back, ${currentUser.name.split(' ')[0]}`}
+        title={`Welcome back, ${currentUser?.name.split(' ')[0]}`}
         description="Track your queues, join a new service, and stay up to date."
       />
 
@@ -71,6 +71,7 @@ export default function UserDashboard({ services, currentUser, onJoin, onLeave, 
         {openServices.length ? (
           <div className="service-overview-grid">
             {openServices.map((service) => {
+              const queue = service.queue || [];
               const inQueue = service.queue.some((user) => user.id === currentUser.id);
               return (
                 <article className="service-overview-card stretch" key={service.id}>
@@ -78,7 +79,7 @@ export default function UserDashboard({ services, currentUser, onJoin, onLeave, 
                   <h3>{service.name}</h3>
                   <p>{service.description}</p>
                   <div className="service-metrics">
-                    <div><span>People waiting</span><strong>{service.queue.length}</strong></div>
+                    <div><span>People waiting</span><strong>{queue.length}</strong></div>
                     <div><span>{inQueue ? 'Your wait' : 'Est. wait'}</span><strong>~{service.queue.length * service.expectedDuration} min</strong></div>
                   </div>
                   <div className="card-actions">

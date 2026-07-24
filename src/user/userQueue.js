@@ -10,7 +10,9 @@ export function statusForPosition(service, index) {
 }
 
 export function getUserQueues(services, userId) {
+  if (!userId) return [];
   return services.flatMap((service) => {
+    const queue = service.queue || [];
     const index = service.queue.findIndex((user) => user.id === userId);
     if (index === -1) return [];
     return [
@@ -29,6 +31,8 @@ export function getUserQueues(services, userId) {
 export function getUserNotifications(services, userId) {
   const notifications = [];
   getUserQueues(services, userId).forEach(({ service, position, status }) => {
+    const queue = service.queue || [];
+
     if (status === 'almost') {
       notifications.push({
         id: `almost-${service.id}`,

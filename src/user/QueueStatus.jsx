@@ -11,7 +11,7 @@ const STEPS = [
 const ORDER = { waiting: 0, almost: 1, served: 2 };
 
 export default function QueueStatus({ services, currentUser, onLeave }) {
-  const myQueues = getUserQueues(services, currentUser.id);
+  const myQueues = getUserQueues(services, currentUser?.id);
 
   return (
     <>
@@ -22,7 +22,10 @@ export default function QueueStatus({ services, currentUser, onLeave }) {
       />
       {myQueues.length ? (
         <div className="status-stack">
-          {myQueues.map(({ service, position, wait, status }) => (
+          {myQueues.map(({ service, position, wait, status }) => {
+            const queue = service.queue || [];
+
+            return (
             <section className="panel status-card" key={service.id}>
               <div className="status-card-head">
                 <div><h2>{service.name}</h2><p>{service.description}</p></div>
@@ -30,7 +33,7 @@ export default function QueueStatus({ services, currentUser, onLeave }) {
               </div>
 
               <div className="status-metrics">
-                <div className="status-metric"><span>Your position</span><strong className="big-number">{position}</strong><small>of {service.queue.length} waiting</small></div>
+                <div className="status-metric"><span>Your position</span><strong className="big-number">{position}</strong><small>of {queue.length} waiting</small></div>
                 <div className="status-metric"><span>Estimated wait</span><strong className="big-number">{wait}</strong><small>minutes</small></div>
                 <div className="status-metric"><span>Queue status</span><strong>{service.isOpen ? 'Open' : 'Paused'}</strong><small>{service.isOpen ? 'Moving now' : 'Temporarily closed'}</small></div>
               </div>
@@ -51,8 +54,9 @@ export default function QueueStatus({ services, currentUser, onLeave }) {
               <div className="card-actions">
                 <button className="button danger-outline" onClick={() => onLeave(service.id)}><Icon name="close" size={17} /> Leave queue</button>
               </div>
-            </section>
-          ))}
+            </section>)
+
+          })}
         </div>
       ) : (
         <section className="panel">

@@ -2,8 +2,8 @@ import React from "react";
 //component imports
 import AuthPage from "./components/AuthPage";
 import Layout from './components/Layout';
-import { nowTime, formatDate } from "./components/Shared";
-import { initialServices, initialHistory, currentUser } from './data/mockData';
+import { formatDate } from "./components/Shared";
+import { initialHistory,  } from './data/mockData';
 //user screen imports
 import UserDashboard from './user/UserDashboard';
 import JoinQueue from './user/JoinQueue';
@@ -18,23 +18,13 @@ import QueueManagement from "./admin/QueueManagement";
 import {USER_NAV_ITEMS, ADMIN_NAV_ITEMS, USER_PAGES,} from "./constants/navigation";
 //api imports
 import { getServices } from "./api/servicesApi";
+import {joinQueue as joinQueueApi, leaveQueue as leaveQueueApi, getQueue, } from "./api/queuesApi";
 
 
 
-
-
-const STORAGE_KEY = 'queuesmart-admin-services-v1';
 const HISTORY_KEY = 'queuesmart-user-history-v1';
 
 
-function loadServices() {
-  try {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    return saved ? JSON.parse(saved) : initialServices;
-  } catch {
-    return initialServices;
-  }
-}
 
 function loadHistory() {
   try {
@@ -51,6 +41,20 @@ function normalizeService(service) {
   return {
     ...service,
     queue: service.queue || [],
+  };
+}
+
+
+function normalizeQueueEntry(entry) {
+  return {
+    id: entry.userId,
+    entryId: entry.id,
+    name: entry.userName,
+    joinedAt: entry.joinedAt,
+    priority: entry.priority,
+    status: entry.status,
+    type: entry.type,
+    appointmentTime: entry.appointmentTime,
   };
 }
 
@@ -87,7 +91,7 @@ React.useEffect(() => {
     if (!currentUserAccount) return;
 
     try {
-      let query = "";''
+      let query = "";
 
       if (currentUserAccount.role === "admin") {
         query = `?adminId=${encodeURIComponent(currentUserAccount.id)}`;
@@ -100,7 +104,29 @@ React.useEffect(() => {
       console.log("Loading services for:", currentUserAccount);
       console.log("Service query:", query);
       const data = await getServices(query);
-      setServices(data.map(normalizeService)); //handle api fetch
+      const servicesWithQueues = await Promise.all(
+        data.map(async (service) => {
+          try {
+            const queueData = await getQueue(service.id); //fecth queue for serviceId
+
+
+            //return service w/ queue entries
+            return {
+              ...service,
+              queue: queueData.queue.map(normalizeQueueEntry),
+            };
+          } catch {
+            //fallback to empty queue
+            return { 
+              ...service,
+              queue: [],
+            };
+          }
+        })
+      );
+
+
+      setServices(servicesWithQueues); //update service state w/ service+queue info
 
     } catch (error) {
       console.error("Failed to load services from backend:", error); //handle fetch error
@@ -148,18 +174,47 @@ React.useEffect(() => {
   }
 
 
-  function joinQueue(serviceId) {
-    setServices((current) => current.map((service) => {
-      if (service.id !== serviceId || service.queue.some((user) => user.id === currentUser.id)) return service;
-      return { ...service, queue: [...service.queue, { id: currentUser.id, name: currentUser.name, joinedAt: nowTime(), priority: 'medium', status: 'waiting' }] };
-    }));
+  //update queue for saved service state
+  function updateServiceQueue(serviceId, queue) {
+  setServices((current) =>
+    current.map((service) =>
+      service.id === serviceId
+        ? {
+            ...service,
+            queue: queue.map(normalizeQueueEntry),
+          }
+        : service
+    )
+  );
+}
+
+
+  //add current user to queue
+  async function joinQueue(serviceId) {
+    try {
+      const data = await joinQueueApi(serviceId, currentUserAccount); //handle API request
+      updateServiceQueue(serviceId, data.queue)
+    } catch (error) {
+      window.alert(error,error || "Failed to join queue.") //handle error
+    }
   }
 
-  function leaveQueue(serviceId) {
+
+  //remove current user from queue
+ async function leaveQueue(serviceId) {
+    try {
+      const data = await leaveQueueApi(serviceId, currentUserAccount.id) //handle api request
+      updateServiceQueue(serviceId, data.queue)
+
     const service = services.find((item) => item.id === serviceId);
-    setServices((current) => current.map((item) => item.id === serviceId ? { ...item, queue: item.queue.filter((user) => user.id !== currentUser.id) } : item));
+    
     if (service) {
       setHistory((current) => [{ id: `hist-${crypto.randomUUID()}`, serviceName: service.name, date: formatDate(), outcome: 'Left' }, ...current]);
+    }
+
+    } catch (error) {
+      window.alert(error,error || "Failed to leave queue.") //handle error
+
     }
   }
  
@@ -189,17 +244,17 @@ React.useEffect(() => {
 
   const isUserPage = USER_PAGES.includes(page);
   const notifications = isUserPage
-    ? getUserNotifications(services, currentUser.id).length
-    : services.filter((service) => service.isOpen && service.queue?.length >= 3).length;
+    ? getUserNotifications(services, currentUserAccount?.id).length
+    : services.filter((service) => service.isOpen && (service.queue?.length || 0) >= 3).length;
  
 
   
 
   return (
     <Layout navItems={navItems} page={page} onPageChange={goTo} notifications={notifications} account={account} onLogout={handleLogout}>
-      {isUser && page === 'user-dashboard' && <UserDashboard services={services} currentUser={currentUser} onJoin={joinQueue} onLeave={leaveQueue} goTo={goTo} />}
-      {isUser && page === 'join' && <JoinQueue services={services} currentUser={currentUser} onJoin={joinQueue} onLeave={leaveQueue} />}
-      {isUser && page === 'status' && <QueueStatus services={services} currentUser={currentUser} onLeave={leaveQueue} />}
+      {isUser && page === 'user-dashboard' && <UserDashboard services={services} currentUser={currentUserAccount} onJoin={joinQueue} onLeave={leaveQueue} goTo={goTo} />}
+      {isUser && page === 'join' && <JoinQueue services={services} currentUser={currentUserAccount} onJoin={joinQueue} onLeave={leaveQueue} />}
+      {isUser && page === 'status' && <QueueStatus services={services} currentUser={currentUserAccount} onLeave={leaveQueue} />}
       {isUser && page === 'history' && <History history={history} />}
       {isAdmin && page === 'dashboard' && <Dashboard services={services} setServices={setServices} goTo={goTo} />}
       {isAdmin && page === 'services' && <ServiceManagement services={services} setServices={setServices}  currentUserAccount={currentUserAccount}/>}
