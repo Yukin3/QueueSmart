@@ -2,7 +2,7 @@ import React from "react";
 import Modal from "../components/Modal";
 import { Icon } from "../components/Icons";
 import {PageHeader, StatusBadge, PriorityBadge, EmptyState} from "../components/Shared";
-import { createService, updateService } from "../api/servicesApi";
+import { createService, updateService, deleteService } from "../api/servicesApi";
 
 
 
@@ -107,15 +107,48 @@ async function save(event) {
 
 
 
-  function remove(service) {
-    if (window.confirm(`Delete “${service.name}”? This also removes its mock queue data.`)) {
-      setServices((current) => current.filter((item) => item.id !== service.id));
+async function remove(service) {
+    if (!window.confirm(`Delete “${service.name}”? This also removes its queue data.`)) return;
+
+    try {
+        await deleteService(service.id);
+        
+        setServices((current) => current.filter((item) => item.id !== service.id));
+
+    } catch (error) {
+        window.alert(error.error || "Failed to delete service.");
     }
+
+
   }
 
-  function toggle(service) {
-    setServices((current) => current.map((item) => item.id === service.id ? { ...item, isOpen: !item.isOpen } : item));
-  }
+
+
+async function toggle(service) {
+try {
+    const data = await updateService(service.id, {isOpen: !service.isOpen }); //handle update request
+
+
+    //update service local state
+    setServices((current) =>
+      current.map((item) =>
+        item.id === service.id
+          ? {
+              ...item,
+              ...data.service,
+              queue: item.queue || [],
+            }
+          : item
+      )
+    );
+
+} catch (error) {
+    window.alert(error.error || "Failed to update service status.");
+}
+
+}
+
+
 
   return (
     <>
@@ -137,7 +170,7 @@ async function save(event) {
                   <td>{service.expectedDuration} min</td>
                   <td><PriorityBadge level={service.priority} /></td>
                   <td><StatusBadge open={service.isOpen} /></td>
-                  <td>{service.queue?.length}</td>
+                  <td>{service.queue?.length || 0}</td>
                   <td><div className="row-actions">
                     <button className={`button small ${service.isOpen ? 'danger-outline' : 'primary'}`} onClick={() => toggle(service)}>{service.isOpen ? 'Close' : 'Open'}</button>
                     <button className="icon-button" onClick={() => openEdit(service)} title="Edit service" aria-label={`Edit ${service.name}`}><Icon name="edit" size={17} /></button>
