@@ -126,6 +126,19 @@
         <p>Allows administrator to serve the next user in the queue.</p>
       </div>
 
+
+      <div class="route">
+        <p><span class="method">PATCH</span><code>/api/queues/:serviceId/reorder</code></p>
+        <p>Allows the administrator to modify the order of upcoming users in service's queue.</p>
+      </div>
+
+      <div class="route">
+        <p><span class="method">DELETE</span><code>/api/queues/:serviceId/users/:userId</code></p>
+        <p>Removes a user from a the queue of the selected service.</p>
+      </div>
+
+
+
     <h3>*Planned*</h3>
         <p>These routes are not yet working, and will be Implemented.</p>
       
@@ -146,19 +159,6 @@
       </div>
 
     
-    
-    <h2>Queues</h2>   
-
-      <div class="route">
-        <p><span class="method">PATCH</span><code>/api/queues/:serviceId/reorder</code></p>
-        <p>Allows the administrator to modify the order of upcoming users in service's queue.</p>
-      </div>
-
-      <div class="route">
-        <p><span class="method">DELETE</span><code>/api/queues/:serviceId/users/:userId</code></p>
-        <p>Removes a user from a the queue of the selected service.</p>
-      </div>
-
 
     <h2>Wait-Time Estimation</h2>  
       <div class="route">
