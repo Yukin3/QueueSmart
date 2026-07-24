@@ -1,6 +1,10 @@
 import React from "react";
 import { Icon } from "../components/Icons";
 import {PageHeader, StatusBadge, PriorityBadge, EmptyState, formatWait,} from "../components/Shared";
+import {serveNext as serveNextApi, removeUserFromQueue, reorderQueue, getQueue} from "../api/queuesApi";
+
+
+
 
 
 
@@ -13,30 +17,107 @@ export default function QueueManagement({services, setServices, initialServiceId
     if (initialServiceId) setSelectedId(initialServiceId);
   }, [initialServiceId]);
 
+
+  React.useEffect(() => {
+  async function loadSelectedQueue() {
+    if (!selected?.id) return;
+
+    try {
+      const data = await getQueue(selected.id);
+
+      setServices((current) =>
+        current.map((service) =>
+          service.id === selected.id
+            ? {
+                ...service,
+                queue: data.queue.map(normalizeQueueEntry),
+              }
+            : service
+        )
+      );
+    } catch (error) {
+      console.error("Failed to load queue:", error);
+    }
+  }
+
+  loadSelectedQueue();
+}, [selected?.id, setServices]);
+
+
+
+  function normalizeQueueEntry(entry) {
+  return {
+    id: entry.userId,
+    entryId: entry.id,
+    name: entry.userName,
+    joinedAt: entry.joinedAt,
+    priority: entry.priority,
+    status: entry.status,
+    type: entry.type,
+    appointmentTime: entry.appointmentTime,
+  };
+}
+
   function updateQueue(nextQueue) {
     setServices((current) => current.map((service) => service.id === selected.id ? { ...service, queue: nextQueue } : service));
   }
 
-  function move(index, direction) {
+  async function move(index, direction) {
+    const queue = selected.queue || [];
     const target = index + direction;
+
+
     if (target < 0 || target >= selected.queue.length) return;
+
+
     const next = [...selected.queue];
     [next[index], next[target]] = [next[target], next[index]];
-    updateQueue(next);
+
+
+    const orderedUserIds = next.map((user) => user.id);
+
+    try {
+        const data = await reorderQueue(selected.id, orderedUserIds);
+        updateQueue(data.queue.map(normalizeQueueEntry));
+
+        
+    } catch (error) {
+       window.alert(error.error || "Could not reorder queue."); 
+    }
   }
 
-  function remove(user) {
-    if (window.confirm(`Remove ${user.name} from this queue?`)) updateQueue(selected.queue.filter((item) => item.id !== user.id));
+async function remove(user) {
+    if (window.confirm(`Remove ${user.name} from this queue?`)) return;
+
+    try {
+        const data = await removeUserFromQueue(selected.id, user.id);  //handle remove user
+        updateQueue(data.queue.map(normalizeQueueEntry)); 
+
+    } catch (error) {
+        window.alert(error.error || "Failed to remove user from queue.");
+    }
   }
 
-  function serveNext() {
+async function serveNext() {
     if (!selected.queue.length) return;
-    const [nextUser, ...remaining] = selected.queue;
-    updateQueue(remaining);
-    window.alert(`${nextUser.name} has been marked as served.`);
+
+
+    try {
+        const data = await serveNextApi(selected.id);
+        updateQueue(data.queue.map(normalizeQueueEntry));
+
+        window.alert(`${data.servedEntry.userName} has been marked as served.`);
+    } catch (error) {
+        window.alert(error.error || "Failed to serve next user.");
+
+    }
   }
+
+
 
   if (!selected) return <EmptyState title="No services yet" message="Create a service before managing a queue." />;
+
+
 
   return (
     <>
@@ -48,7 +129,7 @@ export default function QueueManagement({services, setServices, initialServiceId
       </section>
 
       <section className="panel table-panel">
-        <div className="panel-heading compact-heading"><div><h2>{selected.name} queue</h2><p>UI simulation only; changes are saved in this browser.</p></div></div>
+        <div className="panel-heading compact-heading"><div><h2>{selected.name} queue</h2><p>View waitlist, reorder list, remove users.</p></div></div>
         {selected.queue.length ? (
           <div className="responsive-table-wrap">
             <table className="data-table queue-table">
