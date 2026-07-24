@@ -4,6 +4,7 @@ import { initials } from './Shared';
 
 export default function Layout({ navItems, page, onPageChange, notifications, account, onLogout, children }) {
   const [sidebarOpen, setSidebarOpen] = React.useState(false);
+  const [notificationsOpen, setNotificationsOpen] = React.useState(false);
 
   function navigate(id) {
     onPageChange(id);
@@ -56,10 +57,35 @@ export default function Layout({ navItems, page, onPageChange, notifications, ac
             <Icon name="menu" />
           </button>
           <div className="topbar-spacer" />
-          <button className="notification-button" title="Notifications" aria-label={`${notifications} notifications`}>
+          <button className="notif-button" title="Notifications" aria-label={`${notifications} notifications`}  onClick={() => setNotificationsOpen((open) => !open)}>
             <Icon name="bell" />
-            {notifications > 0 && <span className="notification-count">{notifications}</span>}
+            {notifications > 0 && <span className="notif-count">{notifications}</span>}
           </button>
+          {notificationsOpen && (
+            <div className="notif-popover">
+              <div className="notif-popover-header">
+                <strong>Notifications</strong>
+                <button
+                  className="icon-button ghost"
+                  onClick={() => setNotificationsOpen(false)}
+                  aria-label="Close notifications"
+                >
+                  <Icon name="close" size={16} />
+                </button>
+              </div>
+              {notifications > 0 ? (
+                <div className="notif-popover-body">
+                  <p>You have {notifications} update{notifications === 1 ? "" : "s"}.</p>
+                  <small>Open your dashboard or queue status page to view details.</small>
+                </div>
+              ) : (
+                <div className="notif-popover-body">
+                  <p>No new notifications.</p>
+                  <small>You’re all caught up for now.</small>
+                </div>
+              )}
+            </div>
+          )}
         </header>
         <main className="content">{children}</main>
       </div>
