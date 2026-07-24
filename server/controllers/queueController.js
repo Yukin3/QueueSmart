@@ -284,6 +284,50 @@ function leaveQueue(req, res) {
 
 
 
+//remove a user from queue (admin use)
+function removeUserFromQueue(req, res) {
+  const { serviceId, userId } = req.params;
+
+  const service = services.find((item) => item.id === serviceId);  //find selected service
+
+
+  if (!service) {
+    return res.status(404).json({error: "Service not found."});  //handle nonexisting service
+  }
+
+
+  //check if entry in queue
+  const entry = queueEntries.find(
+    (item) =>
+      item.serviceId === serviceId &&
+      item.userId === userId &&
+      item.status === "waiting"
+  );
+
+
+  if (!entry) {
+    return res.status(404).json({error: "User is not currently waiting in this queue."}); //handle nonexisting entry
+  }
+
+
+  //update entry for deletion
+  entry.status = "removed";
+  entry.removedAt = new Date().toISOString();
+
+
+  const queue = queueEntries.filter((item) => item.serviceId === serviceId && item.status === "waiting"); //filter waiting entries
+
+
+  //return removed queue entry + updated queue
+  return res.json({
+    message: "User removed from queue successfully.",
+    entry,
+    queue: sortQueueEntries(queue),
+  });
+
+}
+
+
 function serveNext(req, res) {
 const { serviceId } = req.params;
 const service = services.find((item) => item.id === serviceId); //find selected service
