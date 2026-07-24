@@ -78,9 +78,53 @@
 
       <div class="route">
         <p><span class="method">GET</span><code>/api/services</code></p>
-        <p>*Returns a list of services for the current administrator or organization. Use params ...... for filtering response.</p>
+        <p>Returns a list of services for the current administrator or organization. Use params ...... for filtering response.</p>
       </div>
 
+
+      <div class="route">
+        <p><span class="method">POST</span><code>/api/services</code></p>
+        <p>Creates a new service for an administrator or organization.</p>
+      </div>
+
+      <div class="route">
+        <p><span class="method">PATCH</span><code>/api/services/:serviceId</code></p>
+        <p>Updates the details (name, description, duration, status etc) of a service.</p>
+      </div>
+
+
+      <div class="route">
+        <p><span class="method">GET</span><code>/api/services/:serviceId</code></p>
+        <p>Returns the detail of one service.</p>
+      </div>
+
+      <div class="route">
+        <p><span class="method">DELETE</span><code>/api/services/:serviceId</code></p>
+        <p>Deletes a service from the administrator/organization.</p>
+      </div>
+
+
+
+      <h2>Queues</h2>   
+
+      <div class="route">
+        <p><span class="method">GET</span><code>/api/queues/:serviceId</code></p>
+        <p>Returns the current queue for a selected service.</p>
+      </div>
+
+      <div class="route">
+        <p><span class="method">POST</span><code>/api/queues/:serviceId/join</code></p>
+        <p>Admits user to selected service queue.</p>
+      </div>
+      <div class="route">
+        <p><span class="method">POST</span><code>/api/queues/:serviceId/leave</code></p>
+        <p>Ends user's current queue session.</p>
+      </div>
+
+      <div class="route">
+        <p><span class="method">POST</span><code>/api/queues/:serviceId/serve-next</code></p>
+        <p>Allows administrator to serve the next user in the queue.</p>
+      </div>
 
     <h3>*Planned*</h3>
         <p>These routes are not yet working, and will be Implemented.</p>
@@ -101,57 +145,10 @@
         <p>Returns the currently signed in admin/organiation or user. Use for session state tracking.</p>
       </div>
 
-    <h2>Services</h2>
-
-
-      <div class="route">
-        <p><span class="method">GET</span><code>/api/services/:serviceId</code></p>
-        <p>Returns the detail of one service.</p>
-      </div>
-
-
-      <div class="route">
-        <p><span class="method">POST</span><code>/api/services</code></p>
-        <p>Creates a new service for an administrator or organization.</p>
-      </div>
-
-      <div class="route">
-        <p><span class="method">PUT</span><code>/api/services/:serviceId</code></p>
-        <p>Upddates the details (name, description, duration, etc) of a service.</p>
-      </div>
-
-      <div class="route">
-        <p><span class="method">PATCH</span><code>/api/services/:serviceId</code></p>
-        <p>Opens or closes the queue to a service.</p>
-      </div>
-
-      <div class="route">
-        <p><span class="method">DELETE</span><code>/api/services/:serviceId</code></p>
-        <p>Deletes a service from the administrator/organization.</p>
-      </div>
-
-
     
     
     <h2>Queues</h2>   
-      <div class="route">
-        <p><span class="method">GET</span><code>/api/queues/:serviceId</code></p>
-        <p>Returns the current queue for a selected service.</p>
-      </div>
 
-      <div class="route">
-        <p><span class="method">POST</span><code>/api/queues/:serviceId/join</code></p>
-        <p>Admits user to selected service queue.</p>
-      </div>
-      <div class="route">
-        <p><span class="method">POST</span><code>/api/queues/:serviceId/leave</code></p>
-        <p>Ends user's current queue session.</p>
-      </div>
-
-      <div class="route">
-        <p><span class="method">POST</span><code>/api/queues/:serviceId/serve-next</code></p>
-        <p>Allows administrator to serve the next user in the queue.</p>
-      </div>
       <div class="route">
         <p><span class="method">PATCH</span><code>/api/queues/:serviceId/reorder</code></p>
         <p>Allows the administrator to modify the order of upcoming users in service's queue.</p>
@@ -159,9 +156,8 @@
 
       <div class="route">
         <p><span class="method">DELETE</span><code>/api/queues/:serviceId/users/:userId</code></p>
-        <p>Removees a user from a the queue of the selected service.</p>
+        <p>Removes a user from a the queue of the selected service.</p>
       </div>
-
 
 
     <h2>Wait-Time Estimation</h2>  
@@ -172,7 +168,7 @@
 
       <div class="route">
         <p><span class="method">GET</span><code>/api/users/:userId/queues/current</code></p>
-        <p>Returns the user's current positon in the queue, their estimated wait time, and their status (joined/unjoined?). Status can be used for triggering reminders to join queues or prepare for service.</p>
+        <p>Returns the user's current position in the queue, their estimated wait time, and their status (joined/unjoined?). Status can be used for triggering reminders to join queues or prepare for service.</p>
       </div>
 
 
@@ -211,12 +207,12 @@
     <h2>Admin Statistics/Usages</h2>  
      <div class="route">
         <p><span class="method">GET</span><code>/api/admin/stats</code></p>
-        <p>Returns all the statistcs of all services and administrator/organization usage. Use params ...... for filtering response.</p>
+        <p>Returns all the statistics of all services and administrator/organization usage. Use params ...... for filtering response.</p>
       </div>
 
       <div class="route">
         <p><span class="method">GET</span><code>/api/admin/services/summary</code></p>
-        <p>Returns a summary of details of a service proivided.</p>
+        <p>Returns a summary of details of a service provided.</p>
       </div>
 
 

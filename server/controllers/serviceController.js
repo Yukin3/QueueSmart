@@ -80,6 +80,21 @@ function getServices(req, res) {
 
 }
 
+
+//get individual service
+function getServiceById(req, res) {
+    const { serviceId } = req.params;
+
+    const service = services.find((item) => item.id === serviceId); //find selected service
+
+    if (!service) {
+        return res.status(404).json({error: "Service not found."}); //handle nonexisting service
+    }
+
+    return res.json(service);  //return service
+}
+
+
 //create and validate new service object
 function createService(req, res) {
     const { name, description, expectedDuration, priority, adminId, organizationId } = req.body; //extract fields from req body
@@ -281,8 +296,33 @@ function updateService(req, res) {
 
 
 
+//delete an individual service
+function deleteService(req, res) {
+    const { serviceId } = req.params;
+
+
+    const index = services.findIndex((item) => item.id === serviceId); //find selected service
+
+
+    if (index === -1) {
+        return res.status(404).json({error: "Service not found."}); //handle nonexisting service
+    }
+
+
+
+    const deletedService = services.splice(index, 1)[0]; //assign service for deletion
+
+    //return deletedd service object
+    return res.json({
+        message: "Service deleted successfully.",
+        service: deletedService,
+    });
+
+}
+
+
 
 //export controller functions
 module.exports = {
-  getServices, createService, updateService
+  getServices, getServiceById, createService, updateService, deleteService
 };
