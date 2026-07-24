@@ -13,8 +13,11 @@ export default function JoinQueue({ services, currentUser, onJoin, onLeave }) {
       <section className="join-grid">
         {services.map((service) => {
           const queue = service.queue || [];
-          const inQueue = queue.some((user) => user.id === currentUser?.id);
-          const projectedWait = queue.length * service.expectedDuration;
+          const userIndex = queue.findIndex((user) => user.id === currentUser?.id);
+          const inQueue = userIndex !== -1;
+          const projectedWait = inQueue
+            ? userIndex * service.expectedDuration
+            : queue.length * service.expectedDuration;
           return (
             <article className={`service-overview-card stretch ${inQueue ? 'is-joined' : ''}`} key={service.id}>
               <div className="service-card-top"><StatusBadge open={service.isOpen} /><PriorityBadge level={service.priority} /></div>
