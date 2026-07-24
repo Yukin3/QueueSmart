@@ -138,6 +138,26 @@
       </div>
 
 
+    <h2>Wait-Time Estimation</h2>
+
+      <div class="route">
+        <p><span class="method">GET</span><code>/api/queues/:serviceId/wait-time</code></p>
+        <p>Returns a wait-time estimate for an individual service, including expected wait--time if  a user joined the queue.</p>
+      </div>  
+
+
+      <div class="route">
+        <p><span class="method">GET</span><code>/api/queues/:serviceId/wait-time</code></p>
+        <p>Returns the estimated wait-time for a service.</p>
+      </div>
+
+      <div class="route">
+        <p><span class="method">GET</span><code>/api/users/:userId/queues/current</code></p>
+        <p>Returns the user's current position in the queue, their estimated wait time, and their status (joined/unjoined?). Status can be used for triggering reminders to join queues or prepare for service.</p>
+      </div>
+
+
+
 
     <h3>*Planned*</h3>
         <p>These routes are not yet working, and will be Implemented.</p>
@@ -159,17 +179,6 @@
       </div>
 
     
-
-    <h2>Wait-Time Estimation</h2>  
-      <div class="route">
-        <p><span class="method">GET</span><code>/api/queues/:serviceId/wait-time</code></p>
-        <p>Returns the estimated wait-time for a service.</p>
-      </div>
-
-      <div class="route">
-        <p><span class="method">GET</span><code>/api/users/:userId/queues/current</code></p>
-        <p>Returns the user's current position in the queue, their estimated wait time, and their status (joined/unjoined?). Status can be used for triggering reminders to join queues or prepare for service.</p>
-      </div>
 
 
 
