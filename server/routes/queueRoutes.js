@@ -13,7 +13,7 @@ router.post("/:serviceId/leave", leaveQueue);
 router.post("/:serviceId/serve-next", serveNext);
 router.delete("/:serviceId/users/:userId", removeUserFromQueue);
 router.patch("/:serviceId/reorder", reorderQueue);
-// router.get("/:serviceId/wait-time/:userId", getWaitTime);
+router.get("/:serviceId/wait-time/:userId", getWaitTime);
 
 
 

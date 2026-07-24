@@ -396,7 +396,7 @@ function reorderQueue(req, res) {
   }
 
 
-  const waitingEntries = queueEntries.filter( (item) => item.serviceId === serviceId && item.status === "waiting"); //create arrary of waiting queueEntries
+  const waitingEntries = queueEntries.filter( (item) => item.serviceId === serviceId && item.status === "waiting"); //filter waiting queueEntries
 
   const waitingUserIds = waitingEntries.map((entry) => entry.userId); //create //create an array of userIds for waiting entries
 
@@ -431,7 +431,51 @@ function reorderQueue(req, res) {
 }
 
 
+function getWaitTime(req, res) {
+  const { serviceId, userId } = req.params;
+
+  const service = services.find((item) => item.id === serviceId);
+
+  if (!service) {
+    return res.status(404).json({error: "Service not found."});  //handle nonexisting service
+  }
+
+
+  const waitingQueue = queueEntries.filter((entry) => entry.serviceId === serviceId && entry.status === "waiting"); //filter waiting queueEntries
+
+
+  const sortedQueue = sortQueueEntries(waitingQueue); //sort waiting entries
+
+  const positionIndex = sortedQueue.findIndex((entry) => entry.userId === userId); //assign numerical position
+
+
+  if (positionIndex === -1) {
+    return res.status(404).json({error: "User is not currently waiting in this queue."});  //handle entry not in queue
+  }
+
+
+
+  const estimatedWait = positionIndex * service.expectedDuration;  //calculate estimated wait time
+
+
+  //return user queue position + wait information
+  return res.json({
+    serviceId,
+    serviceName: service.name,
+    userId,
+    position: positionIndex + 1,
+    peopleAhead: positionIndex,
+    expectedDuration: service.expectedDuration,
+    estimatedWait,
+    estimatedWaitLabel: `~${estimatedWait} min`,
+  });
+
+
+}
+
+
+
 
 module.exports = {
-  getQueue, joinQueue, leaveQueue, serveNext, removeUserFromQueue, reorderQueue,
+  getQueue, joinQueue, leaveQueue, serveNext, removeUserFromQueue, reorderQueue, getWaitTime,
 };
