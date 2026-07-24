@@ -1,0 +1,40 @@
+const notifications = [
+  {
+    id: "notif-001",
+    userId: "user-001",
+    role: "user",
+    title: "It's Almost your Turn!",
+    message: "You are next in line for General Help Desk.",
+    type: "queue-status",
+    tone: "success",
+    createdAt: "2026-07-24T12:00:00Z",
+    isRead: false,
+    readAt: null,
+  },
+  {
+    id: "notif-002",
+    userId: "user-001",
+    role: "user",
+    title: "You're in Line!",
+    message: "You joined the General Help Desk queue.",
+    type: "queue-joined",
+    tone: "info",
+    createdAt: "2026-07-24T11:55:00Z",
+    isRead: true,
+    readAt: "2026-07-24T11:56:00Z",
+  },
+  {
+    id: "notif-003",
+    userId: "admin-001",
+    role: "admin",
+    title: "Service updated",
+    message: "Academic Advising service details were updated.",
+    type: "service-update",
+    tone: "info",
+    createdAt: "2026-07-24T12:10:00Z",
+    isRead: true,
+    readAt: "2026-07-24T12:11:00Z",
+  },
+];
+
+module.exports = notifications;
