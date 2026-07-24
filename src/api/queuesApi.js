@@ -44,3 +44,12 @@ export function removeUserFromQueue(serviceId, userId) {
     method: "DELETE",
   });
 }
+
+
+//handle queue reorder 
+export function reorderQueue(serviceId, orderedUserIds) {
+  return apiRequest(`/queues/${serviceId}/reorder`, {
+    method: "PATCH",
+    body: JSON.stringify({ orderedUserIds }),
+  });
+}

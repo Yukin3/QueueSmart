@@ -9,8 +9,12 @@ function sortQueueEntries(entries) {
   const appointmentWindowMinutes = 25;
 
 
-
   return [...entries].sort((a, b) => {
+    //if both entries have manualOrder, admin reorder takes priority
+    if (a.manualOrder !== undefined && b.manualOrder !== undefined) {
+    return a.manualOrder - b.manualOrder;
+    }
+
     const aApptTime = a.appointmentTime ? new Date(a.appointmentTime) : null;
     const bApptTime = b.appointmentTime ? new Date(b.appointmentTime) : null;
 
@@ -372,6 +376,62 @@ queue: sortQueueEntries(remainingQueue),
 }
 
 
+//reorder queueEntries for a service
+function reorderQueue(req, res) {
+  const { serviceId } = req.params;
+  const { orderedUserIds } = req.body;
+
+  const service = services.find((item) => item.id === serviceId); //find selected service
+
+
+
+  if (!service) {
+    return res.status(404).json({error: "Service not found."}); //handle nonexisting service
+  }
+
+
+
+  if (!Array.isArray(orderedUserIds) || orderedUserIds.length === 0) {
+    return res.status(400).json({error: "orderedUserIds must be a non-empty array."});  //handle empty queue
+  }
+
+
+  const waitingEntries = queueEntries.filter( (item) => item.serviceId === serviceId && item.status === "waiting"); //create arrary of waiting queueEntries
+
+  const waitingUserIds = waitingEntries.map((entry) => entry.userId); //create //create an array of userIds for waiting entries
+
+  const hasSameUsers = orderedUserIds.length === waitingUserIds.length && orderedUserIds.every((id) => waitingUserIds.includes(id)); //confirm list has all waiting users and queue count is unchanged
+
+
+
+  if (!hasSameUsers) {
+    return res.status(400).json({error: "orderedUserIds must include every waiting user exactly once."});  //handle changed queue count
+  }
+
+
+
+  //assign numeric position to entries
+  orderedUserIds.forEach((userId, index) => {
+    const entry = waitingEntries.find((item) => item.userId === userId);
+    entry.manualOrder = index;
+  });
+
+
+
+  const reorderedQueue = sortQueueEntries(waitingEntries); //sort entries in position order
+
+
+  //return reorder queue
+  return res.json({
+    message: "Queue reordered successfully.",
+    queue: reorderedQueue,
+  });
+
+
+}
+
+
+
 module.exports = {
-  getQueue, joinQueue, leaveQueue, serveNext,
+  getQueue, joinQueue, leaveQueue, serveNext, removeUserFromQueue, reorderQueue,
 };
