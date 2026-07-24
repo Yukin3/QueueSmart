@@ -53,3 +53,9 @@ export function reorderQueue(serviceId, orderedUserIds) {
     body: JSON.stringify({ orderedUserIds }),
   });
 }
+
+
+// handle wait time
+export function getWaitTime(serviceId, userId) {
+  return apiRequest(`/queues/${serviceId}/wait-time/${userId}`);
+}
