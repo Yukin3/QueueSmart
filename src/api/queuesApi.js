@@ -36,3 +36,11 @@ export function serveNext(serviceId) {
     method: "POST",
   });
 }
+
+
+//handle admin remove from queue
+export function removeUserFromQueue(serviceId, userId) {
+  return apiRequest(`/queues/${serviceId}/users/${userId}`, {
+    method: "DELETE",
+  });
+}
