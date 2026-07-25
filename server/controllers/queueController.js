@@ -3,6 +3,7 @@ const services = require("../data/services");
 const queueHistory = require("../data/queueHistory");
 const { notifyQueueJoined, notifyNextInLine } = require("../services/notificationService");
 const { recordParticipation } = require("../services/historyService");
+const { estimateWaitTime } = require("../utils/waitTime");
 
 
 
@@ -501,7 +502,7 @@ function getWaitTime(req, res) {
 
 
 
-  const estimatedWait = positionIndex * service.expectedDuration;  //calculate estimated wait time
+  const estimatedWait = estimateWaitTime(positionIndex, service.expectedDuration);  //calculate estimated wait time
 
 
   //return user queue position + wait information
@@ -542,7 +543,7 @@ function getServiceWaitTime(req, res) {
 
 
 
-  const estimatedWaitIfJoining = sortedQueue.length * service.expectedDuration;  //calculate estimated wait time
+  const estimatedWaitIfJoining = estimateWaitTime(sortedQueue.length, service.expectedDuration);  //calculate estimated wait time
 
 
   //return service wait time info
@@ -590,7 +591,7 @@ function getCurrentUserQueues(req, res) {
 
 
 
-    const estimatedWait = positionIndex * service.expectedDuration;  //calculate estimated wait time
+    const estimatedWait = estimateWaitTime(positionIndex, service.expectedDuration);  //calculate estimated wait time
 
 
     //check almost status
