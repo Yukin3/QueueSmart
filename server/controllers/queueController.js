@@ -1,5 +1,29 @@
 const queueEntries = require("../data/queueEntries");
 const services = require("../data/services");
+const queueHistory = require("../data/queueHistory");
+const { notifyQueueJoined, notifyNextInLine } = require("../services/notificationService");
+const { recordParticipation } = require("../services/historyService");
+
+
+
+//notify whoever is currently next in line for a service (close to being served)
+function notifyNextInLineForService(serviceId, service) {
+  const waitingQueue = queueEntries.filter(
+    (entry) => entry.serviceId === serviceId && entry.status === "waiting"
+  );
+
+  if (waitingQueue.length === 0) {
+    return;
+  }
+
+  const sortedQueue = sortQueueEntries(waitingQueue);
+  const nextEntry = sortedQueue[0];
+
+  //only notify when the service is open and able to serve
+  if (service.isOpen) {
+    notifyNextInLine(nextEntry, service);
+  }
+}
 
 
 
@@ -216,6 +240,10 @@ function joinQueue(req, res) {
 
   queueEntries.push(newEntry); //add new entry to queue
 
+  notifyQueueJoined(newEntry, service); //trigger "joined queue" notification
+
+  notifyNextInLineForService(serviceId, service); //notify user if they are already next in line
+
   const queue = queueEntries.filter((entry) => entry.serviceId === serviceId && entry.status === "waiting"); //filter all waiting entries
 
 
@@ -272,8 +300,14 @@ function leaveQueue(req, res) {
   entry.leftAt = new Date().toISOString();
 
 
+  recordParticipation(entry, service, "left", entry.leftAt); //record participation history
+
+
 
   const queue = queueEntries.filter((item) => item.serviceId === serviceId && item.status === "waiting");  //handle nonexisting service
+
+
+  notifyNextInLineForService(serviceId, service); //notify the new front of the queue they are next
 
 
   //return updated entry object + updated queuue
@@ -319,7 +353,13 @@ function removeUserFromQueue(req, res) {
   entry.removedAt = new Date().toISOString();
 
 
+  recordParticipation(entry, service, "removed", entry.removedAt); //record participation history
+
+
   const queue = queueEntries.filter((item) => item.serviceId === serviceId && item.status === "waiting"); //filter waiting entries
+
+
+  notifyNextInLineForService(serviceId, service); //notify the new front of the queue they are next
 
 
   //return removed queue entry + updated queue
@@ -361,8 +401,14 @@ nextEntry.status = "serving";
 nextEntry.servingStartedAt = new Date().toISOString();
 
 
+recordParticipation(nextEntry, service, "served", nextEntry.servingStartedAt); //record participation history
+
+
 
 const remainingQueue = queueEntries.filter((entry) => entry.serviceId === serviceId && entry.status === "waiting");  //filter remaining waiting entries
+
+
+notifyNextInLineForService(serviceId, service); //notify the new front of the queue they are next
 
 
 
@@ -587,6 +633,47 @@ function getCurrentUserQueues(req, res) {
 
 
 
+//get a user's queue participation history
+function getUserHistory(req, res) {
+  const { userId } = req.params;
+  const { serviceId, outcome } = req.query;
+
+
+  //validate optional outcome filter
+  if (outcome && !["served", "left", "removed"].includes(outcome)) {
+    return res.status(400).json({error: "Outcome must be served, left, or removed."});
+  }
+
+
+  let history = queueHistory.filter((record) => record.userId === userId); //find all of the user's participation records
+
+
+  if (serviceId) {
+    history = history.filter((record) => record.serviceId === serviceId); //optional filter by service
+  }
+
+
+  if (outcome) {
+    history = history.filter((record) => record.outcome === outcome); //optional filter by outcome
+  }
+
+
+  //sort most recent first
+  history = [...history].sort((a, b) => new Date(b.endedAt) - new Date(a.endedAt));
+
+
+  //return the user's participation history
+  return res.json({
+    userId,
+    count: history.length,
+    history,
+  });
+
+
+}
+
+
+
 module.exports = {
-  getQueue, joinQueue, leaveQueue, serveNext, removeUserFromQueue, reorderQueue, getWaitTime, getServiceWaitTime, getCurrentUserQueues,
+  getQueue, joinQueue, leaveQueue, serveNext, removeUserFromQueue, reorderQueue, getWaitTime, getServiceWaitTime, getCurrentUserQueues, getUserHistory,
 };

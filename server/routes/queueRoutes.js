@@ -1,11 +1,12 @@
 const express = require("express");
-const {getQueue, joinQueue, leaveQueue, serveNext, removeUserFromQueue, reorderQueue, getWaitTime, getServiceWaitTime, getCurrentUserQueues, } = require("../controllers/queueController");
+const {getQueue, joinQueue, leaveQueue, serveNext, removeUserFromQueue, reorderQueue, getWaitTime, getServiceWaitTime, getCurrentUserQueues, getUserHistory, } = require("../controllers/queueController");
 
 
 
 const router = express.Router();
 
 router.get("/users/:userId/current", getCurrentUserQueues);
+router.get("/users/:userId/history", getUserHistory);
 router.get("/:serviceId/wait-time", getServiceWaitTime);
 router.get("/:serviceId/wait-time/:userId", getWaitTime);
 router.get("/:serviceId", getQueue);
