@@ -1,13 +1,12 @@
 import React from 'react';
 import { PageHeader, StatusBadge, StateBadge, EmptyState } from '../components/Shared';
 import { Icon } from '../components/Icons';
-import { getUserQueues, getUserNotifications } from './userQueue';
+import { getUserQueues } from './userQueue';
 
 const TONE_ICON = { success: 'check', info: 'bell', warning: 'alert' };
 
-export default function UserDashboard({ services, currentUser, onJoin, onLeave, goTo }) {
+export default function UserDashboard({ services, currentUser, notifications = [], onJoin, onLeave, goTo }) {
   const myQueues = getUserQueues(services, currentUser?.id);
-  const notifications = getUserNotifications(services, currentUser?.id);
   const openServices = services.filter((service) => service.isOpen);
 
   return (

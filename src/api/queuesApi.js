@@ -59,3 +59,9 @@ export function reorderQueue(serviceId, orderedUserIds) {
 export function getWaitTime(serviceId, userId) {
   return apiRequest(`/queues/${serviceId}/wait-time/${userId}`);
 }
+
+
+//handle GET user participation history
+export function getUserHistory(userId, query = "") {
+  return apiRequest(`/queues/users/${userId}/history${query}`);
+}

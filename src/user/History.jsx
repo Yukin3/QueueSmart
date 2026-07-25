@@ -1,7 +1,7 @@
 import React from 'react';
 import { PageHeader, EmptyState } from '../components/Shared';
 
-const OUTCOME_CLASS = { Served: 'served', Left: 'left', 'No-show': 'noshow' };
+const OUTCOME_CLASS = { Served: 'served', Left: 'left', Removed: 'noshow', 'No-show': 'noshow' };
 
 export default function History({ history }) {
   return (
