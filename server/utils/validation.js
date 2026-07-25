@@ -76,7 +76,35 @@ function validateLoginInput(credentials) {
     return errors;
 }
 
+function validateRegisterInput(account) {
+    const errors = [];
+
+    if (!account || typeof account !== "object" || Array.isArray(account)) {
+        return ["Registration data must be an object"];
+    }
+
+    if (typeof account.name !== "string" || account.name.trim().length === 0) {
+        errors.push("Name is required");
+    }
+
+    if (typeof account.email !== "string" || account.email.trim().length === 0) {
+        errors.push("Email is required");
+    } else if (!account.email.includes("@")) {
+        errors.push("Email must be valid");
+    }
+
+    if (typeof account.password !== "string" || account.password.length < 6) {
+        errors.push("Password must contain at least 6 characters");
+    }
+
+    if (!["user", "admin"].includes(account.role)) {
+        errors.push("Role must be user or admin");
+    }
+
+    return errors;
+}
+
 module.exports = {
     validateServiceInput,
-    validateLoginInput
+    validateLoginInput, validateRegisterInput,
 };
