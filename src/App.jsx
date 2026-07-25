@@ -3,13 +3,11 @@ import React from "react";
 import AuthPage from "./components/AuthPage";
 import Layout from './components/Layout';
 import { formatDate } from "./components/Shared";
-import { initialHistory,  } from './data/mockData';
 //user screen imports
 import UserDashboard from './user/UserDashboard';
 import JoinQueue from './user/JoinQueue';
 import QueueStatus from './user/QueueStatus';
 import History from './user/History';
-import { getUserNotifications } from './user/userQueue';
 //admin screen imports
 import Dashboard from "./admin/Dashboard";
 import ServiceManagement from "./admin/ServiceManagement";
@@ -18,21 +16,21 @@ import QueueManagement from "./admin/QueueManagement";
 import {USER_NAV_ITEMS, ADMIN_NAV_ITEMS, USER_PAGES,} from "./constants/navigation";
 //api imports
 import { getServices } from "./api/servicesApi";
-import {joinQueue as joinQueueApi, leaveQueue as leaveQueueApi, getQueue, } from "./api/queuesApi";
+import {joinQueue as joinQueueApi, leaveQueue as leaveQueueApi, getQueue, getUserHistory, } from "./api/queuesApi";
+import { getNotifications } from "./api/notificationsApi";
 
 
 
-const HISTORY_KEY = 'queuesmart-user-history-v1';
+//map a backend history record to the shape the History screen renders
+const HISTORY_OUTCOME_LABELS = { served: 'Served', left: 'Left', removed: 'Removed' };
 
-
-
-function loadHistory() {
-  try {
-    const saved = localStorage.getItem(HISTORY_KEY);
-    return saved ? JSON.parse(saved) : initialHistory;
-  } catch {
-    return initialHistory;
-  }
+function normalizeHistoryRecord(record) {
+  return {
+    id: record.id,
+    serviceName: record.serviceName,
+    date: formatDate(new Date(record.endedAt)),
+    outcome: HISTORY_OUTCOME_LABELS[record.outcome] || record.outcome,
+  };
 }
 
 
@@ -64,7 +62,8 @@ export default function App() {
   const [page, setPage] = React.useState('user-dashboard');
   const [selectedServiceId, setSelectedServiceId] = React.useState(null);
   const [services, setServices] = React.useState([]);
-  const [history, setHistory] = React.useState(loadHistory);
+  const [history, setHistory] = React.useState([]);
+  const [notifications, setNotifications] = React.useState([]);
 
   //user states
   const [loggedIn, setLoggedIn] = React.useState(() => {
@@ -81,9 +80,48 @@ export default function App() {
 
 
 
+  //pull the signed-in user's participation history from the backend
+  async function refreshHistory(account = currentUserAccount) {
+    if (!account) {
+      setHistory([]);
+      return;
+    }
+
+    try {
+      const data = await getUserHistory(account.id);
+      setHistory(data.history.map(normalizeHistoryRecord));
+    } catch (error) {
+      console.error("Failed to load history from backend:", error);
+      setHistory([]);
+    }
+  }
+
+
   React.useEffect(() => {
-    localStorage.setItem(HISTORY_KEY, JSON.stringify(history));
-  }, [history]);
+    refreshHistory();
+  }, [currentUserAccount]);
+
+
+  //pull the signed-in user's notifications from the backend
+  async function refreshNotifications(account = currentUserAccount) {
+    if (!account) {
+      setNotifications([]);
+      return;
+    }
+
+    try {
+      const data = await getNotifications(account.id);
+      setNotifications(data.notifications);
+    } catch (error) {
+      console.error("Failed to load notifications from backend:", error);
+      setNotifications([]);
+    }
+  }
+
+
+  React.useEffect(() => {
+    refreshNotifications();
+  }, [currentUserAccount]);
 
 
 React.useEffect(() => {
@@ -194,6 +232,7 @@ React.useEffect(() => {
     try {
       const data = await joinQueueApi(serviceId, currentUserAccount); //handle API request
       updateServiceQueue(serviceId, data.queue)
+      await refreshNotifications(); //pull the notifications the backend just generated
     } catch (error) {
       window.alert(error,error || "Failed to join queue.") //handle error
     }
@@ -206,11 +245,8 @@ React.useEffect(() => {
       const data = await leaveQueueApi(serviceId, currentUserAccount.id) //handle api request
       updateServiceQueue(serviceId, data.queue)
 
-    const service = services.find((item) => item.id === serviceId);
-    
-    if (service) {
-      setHistory((current) => [{ id: `hist-${crypto.randomUUID()}`, serviceName: service.name, date: formatDate(), outcome: 'Left' }, ...current]);
-    }
+    await refreshHistory(); //pull the "left" record the backend just wrote
+    await refreshNotifications(); //refresh notifications after leaving
 
     } catch (error) {
       window.alert(error,error || "Failed to leave queue.") //handle error
@@ -243,16 +279,16 @@ React.useEffect(() => {
 
 
   const isUserPage = USER_PAGES.includes(page);
-  const notifications = isUserPage
-    ? getUserNotifications(services, currentUserAccount?.id).length
+  const notificationCount = isUserPage
+    ? notifications.filter((note) => !note.isRead).length
     : services.filter((service) => service.isOpen && (service.queue?.length || 0) >= 3).length;
- 
 
-  
+
+
 
   return (
-    <Layout navItems={navItems} page={page} onPageChange={goTo} notifications={notifications} account={account} onLogout={handleLogout}>
-      {isUser && page === 'user-dashboard' && <UserDashboard services={services} currentUser={currentUserAccount} onJoin={joinQueue} onLeave={leaveQueue} goTo={goTo} />}
+    <Layout navItems={navItems} page={page} onPageChange={goTo} notifications={notificationCount} account={account} onLogout={handleLogout}>
+      {isUser && page === 'user-dashboard' && <UserDashboard services={services} currentUser={currentUserAccount} notifications={notifications} onJoin={joinQueue} onLeave={leaveQueue} goTo={goTo} />}
       {isUser && page === 'join' && <JoinQueue services={services} currentUser={currentUserAccount} onJoin={joinQueue} onLeave={leaveQueue} />}
       {isUser && page === 'status' && <QueueStatus services={services} currentUser={currentUserAccount} onLeave={leaveQueue} />}
       {isUser && page === 'history' && <History history={history} />}

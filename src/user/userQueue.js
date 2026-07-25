@@ -26,36 +26,3 @@ export function getUserQueues(services, userId) {
     ];
   });
 }
-
-// Builds the in-app notification feed (queue + status updates) for a user.
-export function getUserNotifications(services, userId) {
-  const notifications = [];
-  getUserQueues(services, userId).forEach(({ service, position, status }) => {
-    const queue = service.queue || [];
-
-    if (status === 'almost') {
-      notifications.push({
-        id: `almost-${service.id}`,
-        tone: 'success',
-        title: 'Almost your turn',
-        message: `You are next in line for ${service.name}.`,
-      });
-    } else {
-      notifications.push({
-        id: `waiting-${service.id}`,
-        tone: 'info',
-        title: `Queued for ${service.name}`,
-        message: `You are position ${position} of ${service.queue.length} waiting.`,
-      });
-    }
-    if (!service.isOpen) {
-      notifications.push({
-        id: `closed-${service.id}`,
-        tone: 'warning',
-        title: `${service.name} is paused`,
-        message: 'The queue is temporarily closed, but your spot is saved.',
-      });
-    }
-  });
-  return notifications;
-}
