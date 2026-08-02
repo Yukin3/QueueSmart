@@ -2,12 +2,11 @@ require("dotenv").config();
 
 const { connect } = require("mongoose");
 const app = require("./app");
-//const dbConnect = require("./config/db") //TODO: import function
+const connectDB = require("./config/db")
 
 
-const PORT = 5000; //port server runs on //TODO: get port from env
-
-//connectDB(); //TODO: call func
+const PORT = process.env.PORT || 5000; //port server runs on
+connectDB(); //connect to mongoDB
 
 
 
