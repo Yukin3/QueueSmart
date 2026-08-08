@@ -1,9 +1,28 @@
 const crypto = require("crypto");
-const { validateRegisterInput } = require("../utils/validation");
-const users = require("../data/users"); //import mock data, //TODO: replace w/ real data later
+const bcrypt = require("bcryptjs");
 
-function loginUser(req, res) {
-  const { email, password } = req.body;
+const { validateRegisterInput } = require("../utils/validation");
+const UserCredentials = require("../models/UserCredentials");
+const UserProfile = require("../models/UserProfile");
+
+
+//convert monogo users object
+function formatUser(credentials, profile) {
+    return {
+        id: credentials.accountId,
+        accountId: credentials.accountId,
+        name: profile?.fullName || "",
+        email: credentials.email,
+        role: credentials.role,
+        adminType: credentials.adminType,
+        organizationId: credentials.organizationId,
+    };
+}
+
+
+async function loginUser(req, res) {
+  try {
+     const { email, password } = req.body;
 
 
 //require email + password
@@ -15,35 +34,52 @@ function loginUser(req, res) {
 
 
   //search for matching email + password
-  const user = users.find(
-    (item) =>
-      item.email.toLowerCase() === email.toLowerCase() &&
-      item.password === password
-  );
+  const credentials = await UserCredentials.findOne({
+        email: email.trim().toLowerCase(),
+  });
+
 
 
   //if no match, return invalid error
-  if (!user) {
+  if (!credentials) {
     return res.status(401).json({
       error: "Invalid email or password!",
     });
   }
 
-  
-  const { password: _password, ...safeUser } = user; //hide password before retuning user object
+  //check typed pw to enytped pw
+  const passwordMatches = await bcrypt.compare(password, credentials.passwordHash);
 
+  //handle bad match
+  if (!passwordMatches) {
+        return res.status(401).json({
+            error: "Invalid email or password!",
+        });
+  }
+
+  const profile = await UserProfile.findOne({
+        accountId: credentials.accountId,
+  });
 
 
   //return success sreesponse w/ user object
-  res.json({
+    return res.json({
     message: "Login success!",
-    user: safeUser,
+    user: formatUser(credentials, profile),
+  }); 
+  } catch (error) {
+      return res.status(500).json({
+      error: "Login failed.",
+      details: error.message,
   });
+  }
+
 }
 
 
-function registerUser(req, res) {
-  const errors = validateRegisterInput(req.body); //validate registration input
+async function registerUser(req, res) {
+  try {
+     const errors = validateRegisterInput(req.body); //validate registration input
 
   //handle invalid registration
   if (errors.length > 0) {
@@ -54,11 +90,12 @@ function registerUser(req, res) {
   }
 
   const { name, email, password, role } = req.body;
+  const normalizedEmail = email.trim().toLowerCase();
 
   //check if user alr exists
-  const existingUser = users.find(
-    (user) => user.email.toLowerCase() === email.toLowerCase()
-  );
+  const existingUser = await UserCredentials.findOne({
+      email: normalizedEmail,
+  });
 
 
 
@@ -67,30 +104,46 @@ function registerUser(req, res) {
   }
 
 
+
+  const accountId = `${role}-${crypto.randomUUID()}`;
+  const passwordHash = await bcrypt.hash(password, 10);
+  
+  
   //create new user object
-  const newUser = {
-    id: `${role}-${crypto.randomUUID()}`,
-    name: name.trim(),
-    email: email.trim().toLowerCase(),
-    password,
-    role,
-    organizationId: "org-uh",
-  };
+  const credentials = await UserCredentials.create({
+      accountId,
+      email: normalizedEmail,
+      passwordHash,
+      role,
+      adminType: role === "admin" ? "service_admin" : null,
+      organizationId: "org-uh",
+  });
 
-
-  //add newUser to users
-  users.push(newUser);
-
-
-
-  const { password: _password, ...safeUser } = newUser;  //hide password before retuning user object
+  const profile = await UserProfile.create({
+      accountId,
+      credentialId: credentials._id,
+      fullName: name.trim(),
+      email: normalizedEmail,
+      phone: "",
+      preferences: {
+          notifsEnabled: true,
+          contactMethod: "email",
+      },
+  });
 
 
   //return new user object
   return res.status(201).json({
     message: "Registration successful!",
-    user: safeUser,
+    user: formatUser(credentials, profile),
+  }); 
+  } catch (error) {
+      return res.status(500).json({
+      error: "Registration failed.",
+      details: error.message,
   });
+  }
+
   
 }
 
