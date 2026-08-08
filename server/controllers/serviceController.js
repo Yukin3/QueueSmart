@@ -1,24 +1,40 @@
-const services = require("../data/services"); //import mock data, //TODO: replace w/ real data later
+const Service = require("../models/Service"); // import MongoDB Service model
 
 
+//mongo conversion helper
+function formatService(service) {
+  return {
+    id: service._id.toString(),
+    organizationId: service.organizationId,
+    adminId: service.adminId,
+    name: service.name,
+    description: service.description,
+    expectedDuration: service.expectedDuration,
+    priority: service.priority,
+    isOpen: service.isOpen,
+    createdAt: service.createdAt,
+    updatedAt: service.updatedAt,
+  };
+}
 
 //return list + attirbutes of all services
-function getServices(req, res) {
+async function getServices(req, res) {
+    try {
     const {adminId, organizationId, status, priority, sort} = req.query;
 
-    let result = [...services];
+    const filter = {};
 
 
 //*filters
     //by admin owner
     if (adminId) {
-        result = result.filter((service) => service.adminId === adminId);  //show services with matching admin
+        filter.adminId = adminId;
     }
 
 
     //by linked org
     if (organizationId) {
-        result = result.filter((service) => service.organizationId === organizationId); //show services with matching org
+        filter.organizationId = organizationId;
     }
 
 
@@ -31,7 +47,7 @@ function getServices(req, res) {
         return res.status(400).json({error: "Invalid priority, use low, medium, or high."}); //handle invalid option
     }
 
-    result = result.filter((service) => service.priority === normalPriority); //show services with matching priority
+    filter.priority = normalPriority;
     
     }
 
@@ -42,8 +58,11 @@ function getServices(req, res) {
             return res.status(400).json({error: "Invalid status, use open or closed."});  //handle invalid option
         }
 
-        result = result.filter((service) =>status === "open" ? service.isOpen : !service.isOpen );  //show services with matching status
-    }
+        filter.isOpen = status === "open";
+    }   
+    
+    
+    let result = await Service.find(filter);
 
 
 
@@ -76,27 +95,43 @@ function getServices(req, res) {
     }
 
 
-    res.json(result);
+    return res.json(result.map(formatService));
+  
+    } catch (error) {
+        return res.status(500).json({
+            error: "Failed to fetch services.",
+            details: error.message,
+        });
+    }
 
 }
 
 
 //get individual service
-function getServiceById(req, res) {
+async function getServiceById(req, res) {
+    try {
     const { serviceId } = req.params;
 
-    const service = services.find((item) => item.id === serviceId); //find selected service
+    const service = await Service.findById(serviceId);
+
 
     if (!service) {
         return res.status(404).json({error: "Service not found."}); //handle nonexisting service
     }
 
-    return res.json(service);  //return service
+    return res.json(formatService(service));
+    } catch (error) {
+        return res.status(400).json({
+            error: "Invalid service ID.",
+            details: error.message,
+        });
+    }
+
 }
 
 
 //create and validate new service object
-function createService(req, res) {
+async function createService(req, res) {
     const { name, description, expectedDuration, priority, adminId, organizationId } = req.body; //extract fields from req body
     const normalPriority = priority?.toLowerCase().trim();
     const errors = {}; //init validation error list
@@ -148,11 +183,8 @@ function createService(req, res) {
         });
     }
 
-
-
-    //init new service object
-    const newService = {
-        id: `svc-${Date.now()}`,
+try {
+    const newService = await Service.create({
         organizationId: organizationId || "org-uh",
         adminId: adminId || "admin-001",
         name: name.trim(),
@@ -160,40 +192,46 @@ function createService(req, res) {
         expectedDuration: duration,
         priority: normalPriority,
         isOpen: false,
-    };
+    });
 
-
-
-
-    services.push(newService); //add new service to list of services
-
-
-    //return success msg + new service object
     return res.status(201).json({
         message: "Service created successfully.",
-        service: newService,
+        service: formatService(newService),
     });
+} catch (error) {
+    return res.status(500).json({
+        error: "Failed to create service.",
+        details: error.message,
+    });
+}
+
 
 
 }
 
 
 
-function updateService(req, res) {
+async function updateService(req, res) {
     const { serviceId } = req.params; //get service id from req params
     const { name, description, expectedDuration, priority, isOpen } = req.body;  //get update fields from req body
-    const service = services.find((item) => item.id === serviceId);
+    let service;
 
-
+    try {
+        service = await Service.findById(serviceId);
+    } catch (error) {
+        return res.status(400).json({
+            error: "Invalid service ID.",
+            details: error.message,
+        });
+    }
 
     if (!service) {
-        return res.status(404).json({error: "Service not found."}); //handle invalid service selection
+        return res.status(404).json({ error: "Service not found." });
     }
 
 
-
     const errors = {};
-
+    const updates = {};
 
     //validate name if included in update req
     if (name !== undefined) {
@@ -201,6 +239,8 @@ function updateService(req, res) {
             errors.name = "Name cannot be empty.";
         } else if (name.trim().length > 100) {
             errors.name = "Service name cannot exceed 100 characters.";
+        } else {
+            updates.name = name.trim();
         }
     }
 
@@ -212,6 +252,8 @@ function updateService(req, res) {
             errors.description = "Description cannot be empty.";
         } else if (description.trim().length > 1000) {
             errors.description = "Service description cannot exceed 1000 characters.";
+        } else {
+            updates.description = description.trim();
         }
     }
 
@@ -225,6 +267,8 @@ function updateService(req, res) {
         if (!Number.isInteger(duration) || duration < 1 || duration > 480) {
             errors.expectedDuration =
                 "Expected duration must be a whole number from 1 to 480.";
+        } else {
+            updates.expectedDuration = duration;
         }
     }
 
@@ -238,16 +282,21 @@ function updateService(req, res) {
 
         if (!["low", "medium", "high"].includes(normalizedPriority)) {
             errors.priority = "Priority must be low, medium, or high.";
+        } else {
+            updates.priority = normalizedPriority;
         }
     }
 
 
 
     //validate availability if inclduded in update req
-    if (isOpen !== undefined && typeof isOpen !== "boolean") {
-        errors.isOpen = "isOpen must be true or false.";
+    if (isOpen !== undefined) {
+        if (typeof isOpen !== "boolean") {
+            errors.isOpen = "isOpen must be true or false.";
+        } else {
+            updates.isOpen = isOpen;
+        }
     }
-
 
 
 
@@ -262,61 +311,55 @@ function updateService(req, res) {
 
 
     //update the fields in the req
-    if (name !== undefined) {
-        service.name = name.trim();
-    }
+try {
+    const updatedService = await Service.findByIdAndUpdate(
+        serviceId,
+        { $set: updates },
+        {
+            returnDocument: "after",
+            runValidators: true,
+        }
+    );
 
-    if (description !== undefined) {
-        service.description = description.trim();
-    }
-
-    if (expectedDuration !== undefined) {
-        service.expectedDuration = Number(expectedDuration);
-    }
-
-    if (priority !== undefined) {
-        service.priority = normalizedPriority;
-    }
-
-    if (isOpen !== undefined) {
-        service.isOpen = isOpen;
-    }
-
-
-
-
-    //return updated service body
     return res.json({
         message: "Service updated successfully.",
-        service,
+        service: formatService(updatedService),
     });
-
+} catch (error) {
+    return res.status(500).json({
+        error: "Failed to update service.",
+        details: error.message,
+    });
+}
 
 }
 
 
 
 //delete an individual service
-function deleteService(req, res) {
+async function deleteService(req, res) {
+    try {
     const { serviceId } = req.params;
 
 
-    const index = services.findIndex((item) => item.id === serviceId); //find selected service
+    const deletedService = await Service.findByIdAndDelete(serviceId);
 
-
-    if (index === -1) {
-        return res.status(404).json({error: "Service not found."}); //handle nonexisting service
+    if (!deletedService) {
+        return res.status(404).json({ error: "Service not found." });
     }
 
-
-
-    const deletedService = services.splice(index, 1)[0]; //assign service for deletion
-
-    //return deletedd service object
     return res.json({
         message: "Service deleted successfully.",
-        service: deletedService,
+        service: formatService(deletedService),
     });
+   
+    } catch (error) {
+        return res.status(400).json({
+            error: "Failed to delete service.",
+            details: error.message,
+        });
+    }
+
 
 }
 
