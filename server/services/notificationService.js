@@ -1,21 +1,19 @@
-const notifications = require("../data/notifications");
+const Notification = require("../models/Notification");
 
 //create, store, and log a notification
-function createNotification({ userId, role = "user", title, message, type, tone = "info" }) {
-  const notification = {
-    id: `notif-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+async function createNotification({ userId, role = "user", title, message, type, tone = "info" }) {
+  const notification = await Notification.create({
+    notificationId: `notif-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
     userId,
     role,
     title,
     message,
     type,
     tone,
-    createdAt: new Date().toISOString(),
     isRead: false,
     readAt: null,
-  };
+  });
 
-  notifications.push(notification); //store notification
 
   //log notification (no email/SMS delivery yet)
   console.log(`[NOTIFICATION] -> ${userId} | ${title}: ${message}`);
@@ -25,7 +23,7 @@ function createNotification({ userId, role = "user", title, message, type, tone 
 
 
 //notify a user they successfully joined a queue
-function notifyQueueJoined(entry, service) {
+async function notifyQueueJoined(entry, service) {
   return createNotification({
     userId: entry.userId,
     role: "user",
@@ -38,13 +36,18 @@ function notifyQueueJoined(entry, service) {
 
 
 //notify a user they are next in line / close to being served
-function notifyNextInLine(entry, service) {
+async function notifyNextInLine(entry, service) {
   //avoid sending the same "almost" notification more than once per entry
   if (entry.almostNotified) {
     return null;
   }
 
   entry.almostNotified = true;
+
+  //update notif state
+  if (typeof entry.save === "function") {
+    await entry.save();
+  }
 
   return createNotification({
     userId: entry.userId,

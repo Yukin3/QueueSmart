@@ -265,7 +265,7 @@ async function joinQueue(req, res) {
     const formattedEntry = formatQueueEntry(newEntry);
 
 
-    notifyQueueJoined(formattedEntry, service);
+    await notifyQueueJoined(formattedEntry, service);
 
     await notifyNextInLineForService(serviceId, service);
 

@@ -1,9 +1,10 @@
-const notifications = require("../data/notifications");
+const Notification = require("../models/Notification");
 
 
 //get a user's notifications
-function getUserNotifications(req, res) {
-  const { userId } = req.params;
+async function getUserNotifications(req, res) {
+  try {
+     const { userId } = req.params;
   const { isRead } = req.query;
 
 
@@ -13,22 +14,24 @@ function getUserNotifications(req, res) {
   }
 
 
-  let userNotifications = notifications.filter((item) => item.userId === userId); //find the user's notifications
+  const filter = {userId};
 
 
   if (isRead !== undefined) {
-    const wantRead = isRead === "true";
-    userNotifications = userNotifications.filter((item) => item.isRead === wantRead); //optional filter by read state
+    filter.isRead = isRead === "true"; //optional filter by read state
   }
 
 
   //sort most recent first
-  userNotifications = [...userNotifications].sort(
-    (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
-  );
+  const userNotifications = await Notification.find(filter).sort({
+    createdAt: -1,
+  })
 
 
-  const unreadCount = userNotifications.filter((item) => !item.isRead).length; //count unread
+  const unreadCount = await Notification.countDocuments({
+    userId,
+    isRead: false, 
+  }); //count unread
 
 
   //return the user's notifications
@@ -36,8 +39,27 @@ function getUserNotifications(req, res) {
     userId,
     count: userNotifications.length,
     unreadCount,
-    notifications: userNotifications,
-  });
+    notifications: userNotifications.map((notification) => ({
+        id: notification.notificationId,
+        notificationId: notification.notificationId,
+        userId: notification.userId,
+        role: notification.role,
+        title: notification.title,
+        message: notification.message,
+        type: notification.type,
+        tone: notification.tone,
+        createdAt: notification.createdAt,
+        isRead: notification.isRead,
+        readAt: notification.readAt,
+      })),
+  }); 
+  } catch (error) {
+    return res.status(500).json({
+      error: "Failed to fetch notifications.",
+      details: error.message,
+    });
+  }
+
 
 
 }
