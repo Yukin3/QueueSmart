@@ -14,8 +14,8 @@ async function runSeeds() {
         console.log("Beginning DB seed:")
         
         //TODO: comment/uncomment seed functions as needed
-        await seedServices();
-        await seedUsers();
+        // await seedServices();
+        // await seedUsers();
         await seedQueueEntries();
 
         console.log("Database seeded successfully."); 

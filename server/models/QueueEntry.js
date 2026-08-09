@@ -186,15 +186,13 @@ queueEntrySchema.index(
 
 
 // Validate appointment entries
-queueEntrySchema.pre("validate", function (next) {
+queueEntrySchema.pre("validate", function () {
   if (this.type === "appointment" && !this.appointmentTime) {
     this.invalidate(
       "appointmentTime",
       "Appointment time is required for appointment entries."
     );
   }
-
-  next();
 });
 
 
