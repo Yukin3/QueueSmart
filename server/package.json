@@ -10,6 +10,10 @@
     "test:coverage": "jest --coverage",
     "seed": "node seed/seed.js"
   },
+  "jest": {
+    "testEnvironment": "node",
+    "setupFilesAfterEnv": ["<rootDir>/tests/setup.js"]
+  },
   "keywords": [],
   "author": "",
   "license": "ISC",
