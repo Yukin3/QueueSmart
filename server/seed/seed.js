@@ -7,6 +7,7 @@ const connectDB = require("../config/db");
 const seedServices = require("./seedServices");
 const seedUsers = require("./seedUsers");
 const seedQueueEntries = require("./seedQueueEntries");
+const seedQueues = require("./seedQueues")
 
 async function runSeeds() {
     try {
@@ -16,7 +17,9 @@ async function runSeeds() {
         //TODO: comment/uncomment seed functions as needed
         // await seedServices();
         // await seedUsers();
-        await seedQueueEntries();
+        //await seedQueueEntries();
+        // await seedQueues();
+
 
         console.log("Database seeded successfully."); 
         await mongoose.connection.close();

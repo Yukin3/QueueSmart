@@ -1,10 +1,11 @@
 const QueueEntry = require("../models/QueueEntry");
 const Service = require("../models/Service");
-
+const Queue = require("../models/Queue");
 const QueueHistory = require("../models/QueueHistory");
 const { notifyQueueJoined, notifyNextInLine } = require("../services/notificationService");
 const { recordParticipation } = require("../services/historyService");
 const { estimateWaitTime } = require("../utils/waitTime");
+
 
 
 //convert Mongo queue entry to normal object
@@ -261,6 +262,14 @@ async function joinQueue(req, res) {
       appointmentTime,
     });
 
+    await Queue.findOneAndUpdate(
+      { serviceId },
+      {
+        $inc: { "stats.totalJoined": 1 },
+        $set: { "stats.lastActivityAt": new Date() },
+      }
+    );
+
 
     const formattedEntry = formatQueueEntry(newEntry);
 
@@ -350,6 +359,14 @@ async function leaveQueue(req, res) {
       service,
       "left",
       entry.leftAt
+    );
+
+    await Queue.findOneAndUpdate(
+      { serviceId },
+      {
+        $inc: { "stats.totalLeft": 1 },
+        $set: { "stats.lastActivityAt": new Date() },
+      }
     );
 
 
@@ -507,6 +524,17 @@ async function serveNext(req, res) {
     nextEntry.servingStartedAt = new Date();
 
     await nextEntry.save();
+
+    await Queue.findOneAndUpdate(
+      { serviceId },
+      {
+        $set: {
+          currentServingEntryId: nextEntry._id.toString(),
+          "stats.lastActivityAt": new Date(),
+        },
+        $inc: { "stats.totalServed": 1 },
+      }
+    );
 
 
     const servedEntry = formatQueueEntry(nextEntry);
