@@ -1,8 +1,8 @@
-const queueHistory = require("../data/queueHistory");
+const QueueHistory = require("../models/QueueHistory");
 
 //record a completed queue participation for a user
 //outcome describes how the participation ended: "served", "left", or "removed"
-function recordParticipation(entry, service, outcome, endedAt = new Date().toISOString()) {
+async function recordParticipation(entry, service, outcome, endedAt = new Date().toISOString()) {
   const joinedTime = new Date(entry.joinedAt).getTime();
   const endedTime = new Date(endedAt).getTime();
 
@@ -12,8 +12,8 @@ function recordParticipation(entry, service, outcome, endedAt = new Date().toISO
       ? 0
       : Math.max(0, Math.round((endedTime - joinedTime) / 60000));
 
-  const record = {
-    id: `history-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+  const record = await QueueHistory.create({
+    historyId: `history-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
     entryId: entry.id,
     userId: entry.userId,
     userName: entry.userName,
@@ -26,9 +26,8 @@ function recordParticipation(entry, service, outcome, endedAt = new Date().toISO
     joinedAt: entry.joinedAt,
     endedAt,
     waitDurationMinutes,
-  };
+  });
 
-  queueHistory.push(record); //store participation record
 
   return record;
 }

@@ -1,7 +1,7 @@
 const QueueEntry = require("../models/QueueEntry");
 const Service = require("../models/Service");
 
-const queueHistory = require("../data/queueHistory");
+const QueueHistory = require("../models/QueueHistory");
 const { notifyQueueJoined, notifyNextInLine } = require("../services/notificationService");
 const { recordParticipation } = require("../services/historyService");
 const { estimateWaitTime } = require("../utils/waitTime");
@@ -345,7 +345,7 @@ async function leaveQueue(req, res) {
     const formattedEntry = formatQueueEntry(entry);
 
 
-    recordParticipation(
+    await recordParticipation(
       formattedEntry,
       service,
       "left",
@@ -423,7 +423,7 @@ async function removeUserFromQueue(req, res) {
     const formattedEntry = formatQueueEntry(entry);
 
 
-    recordParticipation(
+    await recordParticipation(
       formattedEntry,
       service,
       "removed",
@@ -512,7 +512,7 @@ async function serveNext(req, res) {
     const servedEntry = formatQueueEntry(nextEntry);
 
 
-    recordParticipation(
+    await recordParticipation(
       servedEntry,
       service,
       "served",
@@ -870,10 +870,9 @@ async function getCurrentUserQueues(req, res) {
 
 
 //GET user history
-//still uses existing history system for now
-function getUserHistory(req, res) {
-
-  const { userId } = req.params;
+async function getUserHistory(req, res) {
+  try {
+      const { userId } = req.params;
   const { serviceId, outcome } = req.query;
 
 
@@ -882,46 +881,55 @@ function getUserHistory(req, res) {
     !["served", "left", "removed"].includes(outcome)
   ) {
     return res.status(400).json({
-      error: "Outcome must be served, left, or removed."
+      error: "Outcome must be 'served', 'left', or 'removed'."
     });
   }
 
 
-  let history =
-    queueHistory.filter(
-      (record) => record.userId === userId
-    );
+  const filter = {userId};
 
 
   if (serviceId) {
-    history =
-      history.filter(
-        (record) =>
-          record.serviceId === serviceId
-      );
+    filter.serviceId = serviceId;
   }
 
 
   if (outcome) {
-    history =
-      history.filter(
-        (record) => record.outcome === outcome
-      );
+    filter.outcome = outcome;
   }
 
 
-  history = [...history].sort(
-    (a, b) =>
-      new Date(b.endedAt) -
-      new Date(a.endedAt)
-  );
-
+  const history = await QueueHistory.find(filter).sort({endedAt: -1});
 
   return res.json({
     userId,
     count: history.length,
-    history,
+    history: history.map((record) => ({
+        id: record.historyId,
+        historyId: record.historyId,
+        entryId: record.entryId,
+        userId: record.userId,
+        userName: record.userName,
+        serviceId: record.serviceId,
+        serviceName: record.serviceName,
+        outcome: record.outcome,
+        type: record.type,
+        priority: record.priority,
+        appointmentTime: record.appointmentTime,
+        joinedAt: record.joinedAt,
+        endedAt: record.endedAt,
+        waitDurationMinutes: record.waitDurationMinutes,
+    })),
   });
+
+  } catch (error) {
+    return res.status(500).json({
+      error: "Failed to load user history.",
+      details: error.message,
+    });
+  }
+
+
 }
 
 
