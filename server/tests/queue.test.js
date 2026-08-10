@@ -1,5 +1,104 @@
 const request = require("supertest");
 const app = require("../app"); //import express app
+const Service = require("../models/Service");
+const QueueEntry = require("../models/QueueEntry");
+const Notification = require("../models/Notification");
+const QueueHistory = require("../models/QueueHistory");
+
+
+let advisingService;
+let helpDeskService;
+let financialService;
+let missingId = "000000000000000000000000";  //*possible mongo id but !exist so should be valid return
+
+
+beforeAll(async () => {
+  advisingService = await Service.findOneAndUpdate(
+    { name: "Academic Advising" },
+    {
+      $set: {
+        organizationId: "org-uh",
+        adminId: "admin-001",
+        name: "Academic Advising",
+        description: "Degree planning, registration, and graduation questions.",
+        expectedDuration: 30,
+        priority: "medium",
+        isOpen: true,
+      },
+    },
+    { upsert: true, returnDocument: "after", runValidators: true }
+  );
+
+
+  helpDeskService = await Service.findOneAndUpdate(
+    { name: "General Help Desk" },
+    {
+      $set: {
+        organizationId: "org-uh",
+        adminId: "admin-001",
+        name: "General Help Desk",
+        description: "General questions, account help, and basic support.",
+        expectedDuration: 12,
+        priority: "low",
+        isOpen: true,
+      },
+    },
+    { upsert: true, returnDocument: "after", runValidators: true }
+  );
+
+
+  financialService = await Service.findOneAndUpdate(
+    { name: "Financial Services" },
+    {
+      $set: {
+        organizationId: "org-uh",
+        adminId: "admin-001",
+        name: "Financial Services",
+        description: "Payments, billing, financial aid, and account questions.",
+        expectedDuration: 15,
+        priority: "medium",
+        isOpen: false,
+      },
+    },
+    {
+      upsert: true,
+      returnDocument: "after",
+      runValidators: true,
+    }
+  );
+});
+
+
+
+
+beforeEach(async () => {
+  await QueueEntry.deleteMany({
+    userId: {
+      $regex:
+        "join-|sort-|serve-|leave-|remove-|wait-|history-|notif-|test-queue",
+    },
+});
+
+
+await Notification.deleteMany({
+    userId: {
+      $regex:
+        "join-|sort-|serve-|leave-|remove-|wait-|history-|notif-|test-queue",
+    },
+});
+
+
+await QueueHistory.deleteMany({
+    userId: {
+      $regex:
+        "join-|sort-|serve-|leave-|remove-|wait-|history-|notif-|test-queue",
+    },
+  });
+});
+
+
+
+
 
 
 //helper: position of a userId within a returned queue array
@@ -19,7 +118,7 @@ describe("Queue join validation", () => {
 
   //valid join succeeds
   test("joins an open queue with valid data", async () => {
-    const response = await request(app).post("/api/queues/svc-advising/join").send({
+    const response = await request(app).post(`/api/queues/${advisingService._id}/join`).send({
       userId: "join-valid-1",
       userName: "Valid Joiner",
     });
@@ -34,7 +133,7 @@ describe("Queue join validation", () => {
 
   //missing userId and userName are rejected together
   test("rejects join with missing userId and userName", async () => {
-    const response = await request(app).post("/api/queues/svc-advising/join").send({
+    const response = await request(app).post(`/api/queues/${advisingService._id}/join`).send({
       userId: "",
       userName: "   ",
     });
@@ -48,7 +147,7 @@ describe("Queue join validation", () => {
 
   //invalid type is rejected
   test("rejects invalid entry type", async () => {
-    const response = await request(app).post("/api/queues/svc-advising/join").send({
+    const response = await request(app).post(`/api/queues/${advisingService._id}/join`).send({
       userId: "join-badtype-1",
       userName: "Bad Type",
       type: "drive-through",
@@ -61,7 +160,7 @@ describe("Queue join validation", () => {
 
   //invalid priority is rejected
   test("rejects invalid priority", async () => {
-    const response = await request(app).post("/api/queues/svc-advising/join").send({
+    const response = await request(app).post(`/api/queues/${advisingService._id}/join`).send({
       userId: "join-badpriority-1",
       userName: "Bad Priority",
       priority: "critical",
@@ -74,7 +173,7 @@ describe("Queue join validation", () => {
 
   //appointment type without a time is rejected
   test("rejects appointment without an appointment time", async () => {
-    const response = await request(app).post("/api/queues/svc-advising/join").send({
+    const response = await request(app).post(`/api/queues/${advisingService._id}/join`).send({
       userId: "join-appt-notime",
       userName: "No Time",
       type: "appointment",
@@ -87,7 +186,7 @@ describe("Queue join validation", () => {
 
   //invalid appointment date is rejected
   test("rejects invalid appointment date", async () => {
-    const response = await request(app).post("/api/queues/svc-advising/join").send({
+    const response = await request(app).post(`/api/queues/${advisingService._id}/join`).send({
       userId: "join-appt-baddate",
       userName: "Bad Date",
       type: "appointment",
@@ -101,12 +200,12 @@ describe("Queue join validation", () => {
 
   //duplicate active entries are rejected
   test("rejects duplicate join for a user already waiting", async () => {
-    await request(app).post("/api/queues/svc-advising/join").send({
+    await request(app).post(`/api/queues/${advisingService._id}/join`).send({
       userId: "join-dup-1",
       userName: "Duplicate",
     });
 
-    const response = await request(app).post("/api/queues/svc-advising/join").send({
+    const response = await request(app).post(`/api/queues/${advisingService._id}/join`).send({
       userId: "join-dup-1",
       userName: "Duplicate",
     });
@@ -118,7 +217,7 @@ describe("Queue join validation", () => {
 
   //closed services cannot be joined
   test("rejects joining a closed service", async () => {
-    const response = await request(app).post("/api/queues/svc-financial/join").send({
+    const response = await request(app).post(`/api/queues/${financialService._id}/join`).send({
       userId: "join-closed-1",
       userName: "Closed Service",
     });
@@ -130,7 +229,7 @@ describe("Queue join validation", () => {
 
   //nonexistent service returns 404
   test("returns 404 when joining a missing service", async () => {
-    const response = await request(app).post("/api/queues/svc-nope/join").send({
+    const response = await request(app).post(`/api/queues/${missingId}/join`).send({
       userId: "join-missing-1",
       userName: "Missing Service",
     });
@@ -149,19 +248,19 @@ describe("Queue prioritization logic", () => {
 
   //urgent priority is served before normal priority
   test("orders urgent priority ahead of normal priority", async () => {
-    await request(app).post("/api/queues/svc-advising/join").send({
+    await request(app).post(`/api/queues/${advisingService._id}/join`).send({
       userId: "sort-normal-1",
       userName: "Normal First",
       priority: "normal",
     });
 
-    await request(app).post("/api/queues/svc-advising/join").send({
+    await request(app).post(`/api/queues/${advisingService._id}/join`).send({
       userId: "sort-urgent-1",
       userName: "Urgent Later",
       priority: "urgent",
     });
 
-    const response = await request(app).get("/api/queues/svc-advising");
+    const response = await request(app).get(`/api/queues/${advisingService._id}`);
     const queue = response.body.queue;
 
     //urgent joined later but should rank ahead of the earlier normal entry
@@ -171,20 +270,20 @@ describe("Queue prioritization logic", () => {
 
   //a due appointment is prioritized ahead of a normal walk-in
   test("prioritizes a due appointment ahead of a normal walk-in", async () => {
-    await request(app).post("/api/queues/svc-advising/join").send({
+    await request(app).post(`/api/queues/${advisingService._id}/join`).send({
       userId: "sort-walkin-1",
       userName: "Walk In",
       priority: "normal",
     });
 
-    await request(app).post("/api/queues/svc-advising/join").send({
+    await request(app).post(`/api/queues/${advisingService._id}/join`).send({
       userId: "sort-appt-1",
       userName: "Due Appointment",
       type: "appointment",
       appointmentTime: soonAppointment,
     });
 
-    const response = await request(app).get("/api/queues/svc-advising");
+    const response = await request(app).get(`/api/queues/${advisingService._id}`);
     const queue = response.body.queue;
 
     expect(positionOf(queue, "sort-appt-1")).toBeLessThan(positionOf(queue, "sort-walkin-1"));
@@ -200,13 +299,13 @@ describe("Queue serve, leave, and remove", () => {
 
   //serving picks the sorted front entry and marks it serving
   test("serves the next user from the front of the queue", async () => {
-    await request(app).post("/api/queues/svc-help-desk/join").send({
+    await request(app).post(`/api/queues/${helpDeskService._id}/join`).send({
       userId: "serve-urgent-1",
       userName: "Serve Urgent",
       priority: "urgent",
     });
 
-    const response = await request(app).post("/api/queues/svc-help-desk/serve-next").send({});
+    const response = await request(app).post(`/api/queues/${helpDeskService._id}/serve-next`).send({});
 
     expect(response.statusCode).toBe(200);
     expect(response.body.servedEntry.userId).toBe("serve-urgent-1");
@@ -216,8 +315,7 @@ describe("Queue serve, leave, and remove", () => {
 
   //serving an empty queue is rejected
   test("rejects serving when nobody is waiting", async () => {
-    //drain svc-financial (closed, always empty) to guarantee an empty queue
-    const response = await request(app).post("/api/queues/svc-financial/serve-next").send({});
+    const response = await request(app).post(`/api/queues/${financialService._id}/serve-next`).send({});
 
     expect(response.statusCode).toBe(400);
     expect(response.body.error).toBe("No users are waiting in this queue.");
@@ -226,12 +324,12 @@ describe("Queue serve, leave, and remove", () => {
 
   //leaving a queue succeeds for a waiting user
   test("lets a waiting user leave the queue", async () => {
-    await request(app).post("/api/queues/svc-advising/join").send({
+    await request(app).post(`/api/queues/${advisingService._id}/join`).send({
       userId: "leave-1",
       userName: "Leaver",
     });
 
-    const response = await request(app).post("/api/queues/svc-advising/leave").send({
+    const response = await request(app).post(`/api/queues/${advisingService._id}/leave`).send({
       userId: "leave-1",
     });
 
@@ -242,7 +340,7 @@ describe("Queue serve, leave, and remove", () => {
 
   //leaving without a userId is rejected
   test("rejects leave with missing userId", async () => {
-    const response = await request(app).post("/api/queues/svc-advising/leave").send({});
+    const response = await request(app).post(`/api/queues/${advisingService._id}/leave`).send({});
 
     expect(response.statusCode).toBe(400);
     expect(response.body.error).toBe("User ID is required.");
@@ -251,7 +349,7 @@ describe("Queue serve, leave, and remove", () => {
 
   //leaving when not in the queue returns 404
   test("returns 404 when leaving a queue the user is not in", async () => {
-    const response = await request(app).post("/api/queues/svc-advising/leave").send({
+    const response = await request(app).post(`/api/queues/${advisingService._id}/leave`).send({
       userId: "never-joined-1",
     });
 
@@ -261,12 +359,12 @@ describe("Queue serve, leave, and remove", () => {
 
   //admin removal succeeds for a waiting user
   test("removes a waiting user (admin action)", async () => {
-    await request(app).post("/api/queues/svc-advising/join").send({
+    await request(app).post(`/api/queues/${advisingService._id}/join`).send({
       userId: "remove-1",
       userName: "To Remove",
     });
 
-    const response = await request(app).delete("/api/queues/svc-advising/users/remove-1");
+    const response = await request(app).delete(`/api/queues/${advisingService._id}/users/remove-1`);
 
     expect(response.statusCode).toBe(200);
     expect(response.body.entry.status).toBe("removed");
@@ -282,7 +380,7 @@ describe("Queue reorder validation", () => {
 
   //orderedUserIds must be a non-empty array
   test("rejects reorder with a non-array payload", async () => {
-    const response = await request(app).patch("/api/queues/svc-advising/reorder").send({
+    const response = await request(app).patch(`/api/queues/${advisingService._id}/reorder`).send({
       orderedUserIds: "not-an-array",
     });
 
@@ -293,7 +391,7 @@ describe("Queue reorder validation", () => {
 
   //orderedUserIds must match the waiting users exactly
   test("rejects reorder that does not match waiting users", async () => {
-    const response = await request(app).patch("/api/queues/svc-advising/reorder").send({
+    const response = await request(app).patch(`/api/queues/${advisingService._id}/reorder`).send({
       orderedUserIds: ["ghost-user-that-is-not-waiting"],
     });
 
@@ -311,7 +409,7 @@ describe("Wait-time calculations", () => {
 
   //service wait time reflects people waiting * expected duration
   test("computes service wait time from queue length", async () => {
-    const response = await request(app).get("/api/queues/svc-advising/wait-time");
+    const response = await request(app).get(`/api/queues/${advisingService._id}/wait-time`);
 
     expect(response.statusCode).toBe(200);
     expect(response.body).toHaveProperty("peopleWaiting");
@@ -323,12 +421,12 @@ describe("Wait-time calculations", () => {
 
   //user wait time reflects position ahead * expected duration
   test("computes a user's wait time from their position", async () => {
-    await request(app).post("/api/queues/svc-advising/join").send({
+    await request(app).post(`/api/queues/${advisingService._id}/join`).send({
       userId: "wait-user-1",
       userName: "Wait User",
     });
 
-    const response = await request(app).get("/api/queues/svc-advising/wait-time/wait-user-1");
+    const response = await request(app).get(`/api/queues/${advisingService._id}/wait-time/wait-user-1`);
 
     expect(response.statusCode).toBe(200);
     expect(response.body.estimatedWait).toBe(
@@ -340,7 +438,7 @@ describe("Wait-time calculations", () => {
 
   //wait time for a user not in the queue returns 404
   test("returns 404 for wait time of a user not in the queue", async () => {
-    const response = await request(app).get("/api/queues/svc-advising/wait-time/not-waiting-1");
+    const response = await request(app).get(`/api/queues/${advisingService._id}/wait-time/not-waiting-1`);
 
     expect(response.statusCode).toBe(404);
   });
@@ -355,12 +453,12 @@ describe("Queue participation history", () => {
 
   //a completed participation is recorded and retrievable
   test("records history when a user leaves and exposes it via the API", async () => {
-    await request(app).post("/api/queues/svc-advising/join").send({
+    await request(app).post(`/api/queues/${advisingService._id}/join`).send({
       userId: "history-user-1",
       userName: "History User",
     });
 
-    await request(app).post("/api/queues/svc-advising/leave").send({
+    await request(app).post(`/api/queues/${advisingService._id}/leave`).send({
       userId: "history-user-1",
     });
 
@@ -370,7 +468,7 @@ describe("Queue participation history", () => {
     expect(response.body.count).toBeGreaterThanOrEqual(1);
     const record = response.body.history[0];
     expect(record.outcome).toBe("left");
-    expect(record.serviceId).toBe("svc-advising");
+    expect(record.serviceId).toBe(`${advisingService._id}`);
     expect(record).toHaveProperty("waitDurationMinutes");
   });
 
@@ -402,19 +500,23 @@ describe("Notification triggers", () => {
 
   //joining a queue records a queue-joined notification for the user
   test("creates a queue-joined notification when a user joins", async () => {
-    const notifications = require("../data/notifications");
-    const before = notifications.length;
+    await Notification.deleteMany({ userId: "notif-join-1" });
+    const before = await Notification.countDocuments({ userId: "notif-join-1" });
 
-    await request(app).post("/api/queues/svc-advising/join").send({
+    await request(app).post(`/api/queues/${advisingService._id}/join`).send({
       userId: "notif-join-1",
       userName: "Notify Join",
     });
 
-    const joined = notifications.find(
-      (n) => n.userId === "notif-join-1" && n.type === "queue-joined"
-    );
+    const after = await Notification.countDocuments({userId: "notif-join-1" });
 
-    expect(notifications.length).toBeGreaterThan(before);
+    const joined = await Notification.findOne({
+      userId: "notif-join-1",
+      type: "queue-joined",
+    });
+
+
+    expect(after).toBeGreaterThan(before);
     expect(joined).toBeDefined();
     expect(joined.tone).toBe("info");
   });
@@ -422,25 +524,20 @@ describe("Notification triggers", () => {
 
   //the front of the queue receives an almost-your-turn notification
   test("creates an almost-your-turn notification for the next-in-line user", async () => {
-    const notifications = require("../data/notifications");
+    await Notification.deleteMany({ userId: "notif-next-1" });
 
-    //fresh user becomes the sole waiting entry after we serve everyone ahead
-    await request(app).post("/api/queues/svc-financial/join").send({
-      userId: "notif-next-1",
-      userName: "Notify Next",
-    }).catch(() => {}); //closed service will reject; use an open one instead
-
-    await request(app).post("/api/queues/svc-help-desk/join").send({
+    await request(app).post(`/api/queues/${helpDeskService._id}/join`).send({
       userId: "notif-next-1",
       userName: "Notify Next",
       priority: "urgent",
     });
 
-    const almost = notifications.find(
-      (n) => n.userId === "notif-next-1" && n.type === "queue-status"
-    );
+    const almost = await Notification.findOne({
+      userId: "notif-next-1",
+      type: "queue-status",
+    });
 
-    expect(almost).toBeDefined();
+    expect(almost).not.toBeNull();
     expect(almost.tone).toBe("success");
   });
 

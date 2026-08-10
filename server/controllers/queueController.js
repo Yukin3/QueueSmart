@@ -112,7 +112,7 @@ async function notifyNextInLineForService(serviceId, service) {
   const nextEntry = sortedQueue[0];
 
   if (service.isOpen) {
-    notifyNextInLine(nextEntry, service);
+    await notifyNextInLine(nextEntry, service);
   }
 }
 
@@ -909,7 +909,7 @@ async function getUserHistory(req, res) {
     !["served", "left", "removed"].includes(outcome)
   ) {
     return res.status(400).json({
-      error: "Outcome must be 'served', 'left', or 'removed'."
+      error: "Outcome must be served, left, or removed."
     });
   }
 

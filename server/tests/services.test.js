@@ -1,8 +1,31 @@
 const request = require("supertest");
 const app = require("../app"); //import express app
+const Service = require("../models/Service");
 
+let helpDeskService;
+let missingId = "000000000000000000000000";
 
-
+beforeAll(async () => {
+  helpDeskService = await Service.findOneAndUpdate(
+    { name: "General Help Desk" },
+    {
+      $set: {
+        organizationId: "org-uh",
+        adminId: "admin-001",
+        name: "General Help Desk",
+        description: "General questions, account help, and basic support.",
+        expectedDuration: 12,
+        priority: "low",
+        isOpen: true,
+      },
+    },
+    {
+      upsert: true,
+      returnDocument: "after",
+      runValidators: true,
+    }
+  );
+});
 
 //group service API tests
 describe("Services API", () => {
@@ -93,7 +116,7 @@ test("rejects invalid service data", async () => {
 
 //test valid service update
 test("updates a service with valid data", async () => {
-    const response = await request(app).patch("/api/services/svc-help-desk").send({
+    const response = await request(app).patch(`/api/services/${helpDeskService._id}`).send({
             name: "Updated Help Desk",
             expectedDuration: 18,
             priority: "high",
@@ -117,7 +140,7 @@ test("updates a service with valid data", async () => {
 //test invalid service update
 test("rejects invalid service update data", async () => {
     const response = await request(app)
-        .patch("/api/services/svc-help-desk")
+        .patch(`/api/services/${helpDeskService._id}`)
         .send({
             name: "",
             expectedDuration: 999,
@@ -141,7 +164,7 @@ test("rejects invalid service update data", async () => {
 //test update nonesxisting service
 // test update missing service
 test("returns 404 when updating a missing service", async () => {
-    const response = await request(app).patch("/api/services/svc-does-not-exist").send({
+    const response = await request(app).patch(`/api/services/${missingId}`).send({  //*valid id to get "service not found"
             name: "Missing Service",
             expectedDuration: 10,
             priority: "medium",
