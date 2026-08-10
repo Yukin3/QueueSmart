@@ -11,8 +11,27 @@ QueueSmart is a smart queue management application for services such as advising
 ### Backend
 - Node.js
 - Express.js
-- Jest
+- MongoDB
 - Supertest
+
+
+## Environment Variables
+
+The backend/Database connection requires a `.env` file inside the `server` folder.
+
+Inside it, include the following:
+
+```env
+MONGO_URI=mongodb_connection_string
+MONGO_TEST_URI=mongodb_test_connection_string
+PORT=5050
+```
+
+`MONGO_URI` is used to connect the server to the database.
+
+`MONGO_TEST_URI` is used for  connecting to the test database and running automated backend tests.
+
+
 
 
 ## Running the Frontend
@@ -24,7 +43,7 @@ npm install
 npm run dev
 ```
 
-Then open the URL shown in the terminal:
+Open the URL shown in the terminal.
 
 To build the frontend:
 
@@ -48,13 +67,7 @@ npm install
 npm run dev
 ```
 
-The backend is running at:
-
-```text
-http://localhost:5000
-```
-
-An API documentation page is also available at this root route.
+Open the URL shown in the terminal.
 
 
 ## Running Both Frontend and Backend
@@ -74,11 +87,8 @@ Start the frontend in the second terminal
 npm run dev
 ```
 
-The frontend expects the server to be running at:
+Open the URL shown in the terminal.
 
-```text
-http://localhost:5000/api
-```
 
 ## Running Backend Tests
 
