@@ -65,3 +65,8 @@ export function getWaitTime(serviceId, userId) {
 export function getUserHistory(userId, query = "") {
   return apiRequest(`/queues/users/${userId}/history${query}`);
 }
+
+//handle GET user's current active queues
+export function getCurrentUserQueues(userId) {
+  return apiRequest(`/queues/users/${userId}/current`);
+}

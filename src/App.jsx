@@ -290,7 +290,7 @@ React.useEffect(() => {
     <Layout navItems={navItems} page={page} onPageChange={goTo} notifications={notificationCount} account={account} onLogout={handleLogout}>
       {isUser && page === 'user-dashboard' && <UserDashboard services={services} currentUser={currentUserAccount} notifications={notifications} onJoin={joinQueue} onLeave={leaveQueue} goTo={goTo} />}
       {isUser && page === 'join' && <JoinQueue services={services} currentUser={currentUserAccount} onJoin={joinQueue} onLeave={leaveQueue} />}
-      {isUser && page === 'status' && <QueueStatus services={services} currentUser={currentUserAccount} onLeave={leaveQueue} />}
+      {isUser && page === 'status' && <QueueStatus currentUser={currentUserAccount} onLeave={leaveQueue} />}
       {isUser && page === 'history' && <History currentUser={currentUserAccount} />}
       {isAdmin && page === 'dashboard' && <Dashboard services={services} setServices={setServices} goTo={goTo} />}
       {isAdmin && page === 'services' && <ServiceManagement services={services} setServices={setServices}  currentUserAccount={currentUserAccount}/>}
