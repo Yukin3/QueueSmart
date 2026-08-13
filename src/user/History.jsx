@@ -1,9 +1,19 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { PageHeader, EmptyState } from '../components/Shared';
+import { getUserHistory } from '../api/queuesApi'; 
 
-const OUTCOME_CLASS = { Served: 'served', Left: 'left', Removed: 'noshow', 'No-show': 'noshow' };
+const OUTCOME_CLASS = { served: 'served', left: 'left', removed: 'noshow', 'No-show': 'noshow' };
 
-export default function History({ history }) {
+export default function History({ currentUser }) {
+const [history, setHistory] = useState([]);
+
+  useEffect(() => {
+    if (!currentUser?.id) return;
+    getUserHistory(currentUser.id)
+      .then((data) => setHistory(data.history || []))
+      .catch(() => setHistory([]));
+  }, [currentUser?.id]);
+
   return (
     <>
       <PageHeader
