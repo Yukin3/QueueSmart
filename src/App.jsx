@@ -291,11 +291,11 @@ React.useEffect(() => {
       {isUser && page === 'user-dashboard' && <UserDashboard services={services} currentUser={currentUserAccount} notifications={notifications} onJoin={joinQueue} onLeave={leaveQueue} goTo={goTo} />}
       {isUser && page === 'join' && <JoinQueue services={services} currentUser={currentUserAccount} onJoin={joinQueue} onLeave={leaveQueue} />}
       {isUser && page === 'status' && <QueueStatus services={services} currentUser={currentUserAccount} onLeave={leaveQueue} />}
-      {isUser && page === 'history' && <History history={history} />}
+      {isUser && page === 'history' && <History currentUser={currentUserAccount} />}
       {isAdmin && page === 'dashboard' && <Dashboard services={services} setServices={setServices} goTo={goTo} />}
       {isAdmin && page === 'services' && <ServiceManagement services={services} setServices={setServices}  currentUserAccount={currentUserAccount}/>}
       {isAdmin && page === 'queues' && <QueueManagement services={services} setServices={setServices} initialServiceId={selectedServiceId} />}
-      {isAdmin && page === 'history' && <History history={history} />}
+      {isAdmin && page === 'history' && <History currentUser={currentUserAccount} />}
     </Layout>
   );
 }
