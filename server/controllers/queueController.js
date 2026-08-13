@@ -4,7 +4,7 @@ const Queue = require("../models/Queue");
 const QueueHistory = require("../models/QueueHistory");
 const { notifyQueueJoined, notifyNextInLine } = require("../services/notificationService");
 const { recordParticipation } = require("../services/historyService");
-const { estimateWaitTime } = require("../utils/waitTime");
+const { estimateWaitTime, estimateSmartWaitTime } = require("../utils/waitTime");
 
 
 
@@ -714,11 +714,11 @@ async function getWaitTime(req, res) {
     }
 
 
-    const estimatedWait =
-      estimateWaitTime(
+    const smartWait = await estimateSmartWaitTime(
         positionIndex,
-        service.expectedDuration
+        service
       );
+      const estimatedWait = smartWait.minutes;
 
 
     return res.json({
@@ -846,12 +846,11 @@ async function getCurrentUserQueues(req, res) {
         );
 
 
-      const estimatedWait =
-        estimateWaitTime(
-          positionIndex,
-          service.expectedDuration
-        );
-
+      const smartWait = await estimateSmartWaitTime(
+        positionIndex,
+        service
+      );
+      const estimatedWait = smartWait.minutes;
 
       const displayStatus =
         positionIndex === 0 && service.isOpen
@@ -871,6 +870,8 @@ async function getCurrentUserQueues(req, res) {
         expectedDuration: service.expectedDuration,
         estimatedWait,
         estimatedWaitLabel: `~${estimatedWait} min`,
+        waitBasis: smartWait.basis,
+        waitSampleSize: smartWait.sampleSize,
         status: entry.status,
         displayStatus,
         joinedAt: entry.joinedAt,
