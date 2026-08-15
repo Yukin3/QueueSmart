@@ -106,7 +106,7 @@ async function getQueueHistoryReport(req, res) {
     const filter = await applyHistoryFilters(req.query);
     const history = await QueueHistory.find(filter).sort({ endedAt: -1 }); //filter hustory records
 
-    
+
 
     //return req. fields in json
     return res.json({
@@ -142,17 +142,16 @@ async function getQueueHistoryReport(req, res) {
 //export history report as csv
 async function exportQueueHistoryCsv(req, res) {
   try {
-    const filter = await applyHistoryFilters(req.query);
     const { adminId } = req.query;
-    const history = await QueueHistory.find(filter).sort({ endedAt: -1 });
-
-
 
     if (!adminId) {
         return res.status(400).json({
             error: "adminId is required to generate reports.",
         });
     }
+
+    const filter = await applyHistoryFilters(req.query);
+    const history = await QueueHistory.find(filter).sort({ endedAt: -1 });
 
 
 
@@ -213,8 +212,12 @@ async function exportQueueHistoryCsv(req, res) {
 
 
 //build queue stats summary (for json +csv)
-async function buildQueueStatsReport(adminId) {
-  const services = await getAdminServices(adminId);
+async function buildQueueStatsReport(adminId, serviceId) {
+    let services = await getAdminServices(adminId);
+
+    if (serviceId) {
+        services = services.filter((service) => service._id.toString() === serviceId);
+    }
 
   const report = [];
 
@@ -303,7 +306,7 @@ async function getQueueStatsReport(req, res) {
     }
 
 
-    const report = await buildQueueStatsReport(adminId);
+    const report = await buildQueueStatsReport(adminId, req.query.serviceId);
 
 
 
@@ -338,7 +341,7 @@ async function exportQueueStatsCsv(req, res) {
     }
 
 
-    const report = await buildQueueStatsReport(adminId);
+    const report = await buildQueueStatsReport(adminId, req.query.serviceId);
 
      //csv columns
     const headers = [
