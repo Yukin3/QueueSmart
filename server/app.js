@@ -7,6 +7,8 @@ const authRoutes = require("./routes/authRoutes");
 const serviceRoutes = require("./routes/serviceRoutes");
 const queueRoutes = require("./routes/queueRoutes");
 const notificationRoutes = require("./routes/notificationRoutes");
+const reportRoutes = require("./routes/reportRoutes");
+
 
 
 const app = express();
@@ -43,7 +45,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api/services", serviceRoutes);
 app.use("/api/queues", queueRoutes);
 app.use("/api/notifications", notificationRoutes);
-
+app.use("/api/reports", reportRoutes);
 
 module.exports = app; //export express app
 
