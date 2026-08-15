@@ -12,6 +12,7 @@ import History from './user/History';
 import Dashboard from "./admin/Dashboard";
 import ServiceManagement from "./admin/ServiceManagement";
 import QueueManagement from "./admin/QueueManagement";
+import Reports from "./admin/Reports";
 //constant imports
 import {USER_NAV_ITEMS, ADMIN_NAV_ITEMS, USER_PAGES,} from "./constants/navigation";
 //api imports
@@ -295,7 +296,8 @@ React.useEffect(() => {
       {isAdmin && page === 'dashboard' && <Dashboard services={services} setServices={setServices} goTo={goTo} />}
       {isAdmin && page === 'services' && <ServiceManagement services={services} setServices={setServices}  currentUserAccount={currentUserAccount}/>}
       {isAdmin && page === 'queues' && <QueueManagement services={services} setServices={setServices} initialServiceId={selectedServiceId} />}
-      {isAdmin && page === 'history' && <History currentUser={currentUserAccount} />}
+      {isAdmin && page === 'reports' && (<Reports services={services} currentUser={currentUserAccount} />)}
+      {isAdmin && page === 'history' && <History currentUser={currentUserAccount} />} 
     </Layout>
-  );
+  ); //TODO: add or remove admin history page
 }

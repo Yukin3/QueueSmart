@@ -11,6 +11,7 @@ export const ADMIN_NAV_ITEMS = [
   { id: 'dashboard', label: 'Dashboard', icon: 'dashboard' },
   { id: 'services', label: 'Service Management', icon: 'services' },
   { id: 'queues', label: 'Queue Management', icon: 'queue' },
+  { id: "reports", label: "Reports", icon: "clock" },
 ];
 
 export const USER_PAGES = ['user-dashboard', 'join', 'status', 'history'];
